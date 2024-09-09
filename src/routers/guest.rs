@@ -1,5 +1,5 @@
 use crate::{
-    controllers::{category, product, role, unit, user, warehouse},
+    controllers::{cart, category, product, role, unit, user, warehouse},
     utils::db::DB,
 };
 use axum::{
@@ -50,6 +50,13 @@ pub fn init() -> Router<DB> {
         .route("/products/:id", patch(product::update))
         .route("/products/:id", delete(product::destroy));
 
+    let cart_router = Router::new()
+        .route("/carts", get(cart::index))
+        .route("/carts/:id", get(cart::show))
+        .route("/carts", post(cart::store))
+        .route("/carts/:id", patch(cart::update))
+        .route("/carts/:id", delete(cart::destroy));
+
     Router::new()
         .merge(role_router)
         .merge(user_router)
@@ -57,4 +64,5 @@ pub fn init() -> Router<DB> {
         .merge(unit_router)
         .merge(warehouse_router)
         .merge(product_router)
+        .merge(cart_router)
 }
