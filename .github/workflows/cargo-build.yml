@@ -22,6 +22,10 @@ jobs:
         with:
           toolchain: stable # You can change this to nightly or any specific version if needed
 
-      # Step 3: Build the project using Cargo
+      # Step 3: COPY .env
+      - name: Build with Cargo
+        run: cp .env.example .env
+
+      # Step 4: Build the project using Cargo
       - name: Build with Cargo
         run: cargo check
