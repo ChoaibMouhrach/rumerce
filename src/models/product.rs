@@ -138,10 +138,21 @@ impl Product {
     }
 
     pub async fn detach_variants(&self, db: &DB) {
-        sqlx::query!("DELETE FROM products WHERE products.id = $1", self.id)
-            .execute(db)
-            .await
-            .unwrap();
+        sqlx::query!(
+            "DELETE FROM product_variants WHERE product_id = $1",
+            self.id
+        )
+        .execute(db)
+        .await
+        .unwrap();
+
+        sqlx::query!(
+            "DELETE FROM product_variant_collection_keys WHERE product_id = $1",
+            self.id
+        )
+        .execute(db)
+        .await
+        .unwrap();
     }
 }
 
