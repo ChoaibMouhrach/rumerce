@@ -7,7 +7,7 @@ use crate::{utils::db::DB, validations::product::Variant};
 
 use super::{category::Category, unit::Unit};
 
-#[derive(Debug, FromRow, Serialize, sqlx::Type)]
+#[derive(Debug, Clone, FromRow, Serialize, sqlx::Type)]
 pub struct Product {
     pub id: Uuid,
     pub name: String,
@@ -156,38 +156,63 @@ impl Product {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug, Clone)]
 pub struct PopulatedProduct {
     pub product: Product,
     pub category: Category,
     pub unit: Unit,
+    pub variant: ProductVariant,
+    pub collection: ProductVariantCollection,
+    pub key: ProductVariantCollectionKey,
+    pub value: ProductVariantCollectionValue,
 }
 
-#[derive(Debug, FromRow, Serialize, sqlx::Type)]
+#[derive(Debug, Clone, FromRow, Serialize, sqlx::Type)]
 pub struct ProductVariantCollectionKey {
     pub id: Uuid,
     pub name: String,
     pub product_id: Uuid,
 }
 
-#[derive(Debug, FromRow, Serialize, sqlx::Type)]
+#[derive(Debug, Clone, FromRow, Serialize, sqlx::Type)]
 pub struct ProductVariantCollectionValue {
     pub id: Uuid,
     pub name: String,
     pub key_id: Uuid,
 }
 
-#[derive(Debug, FromRow, Serialize, sqlx::Type)]
+#[derive(Debug, Clone, FromRow, Serialize, sqlx::Type)]
 pub struct ProductVariant {
     pub id: Uuid,
     pub price: f32,
     pub product_id: Uuid,
 }
 
-#[derive(Debug, FromRow, Serialize, sqlx::Type)]
+#[derive(Debug, Clone, FromRow, Serialize, sqlx::Type)]
 pub struct ProductVariantCollection {
     pub id: Uuid,
     pub variant_id: Uuid,
     pub key_id: Uuid,
     pub value_id: Uuid,
+}
+
+#[derive(Serialize, Debug, Clone)]
+pub struct SCollection {
+    pub collection: ProductVariantCollection,
+    pub key: ProductVariantCollectionKey,
+    pub value: ProductVariantCollectionValue,
+}
+
+#[derive(Serialize, Debug, Clone)]
+pub struct SVariant {
+    pub variant: ProductVariant,
+    pub collections: Vec<SCollection>,
+}
+
+#[derive(Serialize, Debug, Clone)]
+pub struct SProduct {
+    pub product: Product,
+    pub category: Category,
+    pub unit: Unit,
+    pub variants: Vec<SVariant>,
 }

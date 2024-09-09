@@ -3,7 +3,7 @@ use serde::Serialize;
 use sqlx::prelude::FromRow;
 use uuid::Uuid;
 
-#[derive(FromRow, Serialize, sqlx::Type)]
+#[derive(FromRow, Serialize, sqlx::Type, Debug, Clone)]
 pub struct Category {
     pub id: Uuid,
     pub name: String,
