@@ -1,0 +1,42 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO product_variant_collections(variant_id, key_id, value_id) SELECT * FROM UNNEST($1::UUID[], $2::UUID[], $3::UUID[]) RETURNING *",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "variant_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "key_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "value_id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "UuidArray",
+        "UuidArray",
+        "UuidArray"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "c30e6e18d66d6b9fa240e41210793313ba0b93bb5dc191f4029b840289476be3"
+}

@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT \n                (users.id, users.name, users.email, users.role_id, users.created_at) as \"user!: User\",\n                (roles.id, roles.name, roles.created_at) as \"role!: Role\"\n            FROM users \n            JOIN roles ON roles.id = users.role_id\n            WHERE users.id = $1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user!: User",
+        "type_info": "Record"
+      },
+      {
+        "ordinal": 1,
+        "name": "role!: Role",
+        "type_info": "Record"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null,
+      null
+    ]
+  },
+  "hash": "15aaa2991eeac0db2a05db136d5b3ae10b07d7c1ed2e82691fbb55420375b1ee"
+}
