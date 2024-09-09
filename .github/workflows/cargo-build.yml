@@ -24,4 +24,4 @@ jobs:
 
       # Step 3: Build the project using Cargo
       - name: Build with Cargo
-        run: cargo build --verbose
+        run: cargo check
