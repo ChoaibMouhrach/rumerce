@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use sqlx::postgres::PgQueryResult;
+use sqlx::{postgres::PgQueryResult, PgConnection};
 use uuid::Uuid;
 
 use crate::{
@@ -13,11 +13,10 @@ use crate::{
         },
         unit::Unit,
     },
-    utils::db::DB,
     validations::product::StoreProductSchema,
 };
 
-pub async fn all(db: &DB) -> Result<Vec<SProduct>, sqlx::Error> {
+pub async fn all(db: &mut PgConnection) -> Result<Vec<SProduct>, sqlx::Error> {
     let raw_products = sqlx::query_as!(
         PopulatedProduct,
         r#"
@@ -37,7 +36,7 @@ pub async fn all(db: &DB) -> Result<Vec<SProduct>, sqlx::Error> {
           JOIN product_variant_collection_keys ON product_variant_collections.key_id = product_variant_collection_keys.id
           JOIN product_variant_collection_values ON product_variant_collections.value_id = product_variant_collection_values.id
         "#
-    ).fetch_all(db).await?;
+    ).fetch_all(&mut *db).await?;
 
     // Create a HashSet to remove duplicates by id
     let unique_ids: HashSet<Uuid> = raw_products.iter().map(|s| s.product.id).collect();
@@ -93,7 +92,7 @@ pub async fn all(db: &DB) -> Result<Vec<SProduct>, sqlx::Error> {
     return Ok(results);
 }
 
-pub async fn find(id: &Uuid, db: &DB) -> Result<Option<SProduct>, sqlx::Error> {
+pub async fn find(id: &Uuid, db: &mut PgConnection) -> Result<Option<SProduct>, sqlx::Error> {
     let raw_products = sqlx::query_as!(
         PopulatedProduct,
         r#"
@@ -115,7 +114,7 @@ pub async fn find(id: &Uuid, db: &DB) -> Result<Option<SProduct>, sqlx::Error> {
           WHERE products.id = $1
         "#,
         id
-    ).fetch_all(db).await?;
+    ).fetch_all(&mut *db).await?;
 
     // Create a HashSet to remove duplicates by id
     let unique_ids: HashSet<Uuid> = raw_products.iter().map(|s| s.product.id).collect();
@@ -174,7 +173,10 @@ pub async fn find(id: &Uuid, db: &DB) -> Result<Option<SProduct>, sqlx::Error> {
     }
 }
 
-pub async fn insert(input: &StoreProductSchema, db: &DB) -> Result<Product, sqlx::Error> {
+pub async fn insert(
+    input: &StoreProductSchema,
+    db: &mut PgConnection,
+) -> Result<Product, sqlx::Error> {
     sqlx::query_as!(
         Product,
         r#"
@@ -198,14 +200,14 @@ pub async fn insert(input: &StoreProductSchema, db: &DB) -> Result<Product, sqlx
         input.category_id,
         input.unit_id
     )
-    .fetch_one(db)
+    .fetch_one(&mut *db)
     .await
 }
 
 pub async fn update(
     id: &Uuid,
     input: &StoreProductSchema,
-    db: &DB,
+    db: &mut PgConnection,
 ) -> Result<PgQueryResult, sqlx::Error> {
     sqlx::query!(
         r#"
@@ -217,17 +219,17 @@ pub async fn update(
         input.category_id,
         input.unit_id,
     )
-    .execute(db)
+    .execute(&mut *db)
     .await
 }
 
-pub async fn delete(id: &Uuid, db: &DB) -> Result<PgQueryResult, sqlx::Error> {
+pub async fn delete(id: &Uuid, db: &mut PgConnection) -> Result<PgQueryResult, sqlx::Error> {
     sqlx::query!(
         r#"
         DELETE FROM products WHERE id = $1
         "#,
         id,
     )
-    .execute(db)
+    .execute(&mut *db)
     .await
 }

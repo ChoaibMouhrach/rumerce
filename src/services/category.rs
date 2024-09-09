@@ -1,45 +1,47 @@
 use crate::{
     models::category::Category,
-    utils::db::DB,
     validations::category::{StoreCategorySchema, UpdateCategorySchema},
 };
-use sqlx::postgres::PgQueryResult;
+use sqlx::{postgres::PgQueryResult, PgConnection};
 use uuid::Uuid;
 
-pub async fn all(db: &DB) -> Result<Vec<Category>, sqlx::Error> {
+pub async fn all(db: &mut PgConnection) -> Result<Vec<Category>, sqlx::Error> {
     sqlx::query_as!(Category, "SELECT * FROM categories")
-        .fetch_all(db)
+        .fetch_all(&mut *db)
         .await
 }
 
-pub async fn find(id: &Uuid, db: &DB) -> Result<Option<Category>, sqlx::Error> {
+pub async fn find(id: &Uuid, db: &mut PgConnection) -> Result<Option<Category>, sqlx::Error> {
     sqlx::query_as!(Category, "SELECT * FROM categories WHERE id = $1", id)
-        .fetch_optional(db)
+        .fetch_optional(&mut *db)
         .await
 }
 
-pub async fn insert(input: &StoreCategorySchema, db: &DB) -> Result<PgQueryResult, sqlx::Error> {
+pub async fn insert(
+    input: &StoreCategorySchema,
+    db: &mut PgConnection,
+) -> Result<PgQueryResult, sqlx::Error> {
     sqlx::query!("INSERT INTO categories(name) VALUES ($1)", input.name)
-        .execute(db)
+        .execute(&mut *db)
         .await
 }
 
 pub async fn update(
     id: &Uuid,
     input: &UpdateCategorySchema,
-    db: &DB,
+    db: &mut PgConnection,
 ) -> Result<PgQueryResult, sqlx::Error> {
     sqlx::query!(
         "UPDATE categories SET name = $1 WHERE id = $2",
         input.name,
         id
     )
-    .execute(db)
+    .execute(&mut *db)
     .await
 }
 
-pub async fn destroy(id: &Uuid, db: &DB) -> Result<PgQueryResult, sqlx::Error> {
+pub async fn destroy(id: &Uuid, db: &mut PgConnection) -> Result<PgQueryResult, sqlx::Error> {
     sqlx::query!("DELETE FROM categories WHERE id = $1", id)
-        .execute(db)
+        .execute(&mut *db)
         .await
 }

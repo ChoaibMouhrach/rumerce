@@ -10,7 +10,15 @@ use uuid::Uuid;
 use crate::{services, utils::db::DB, validations::warehouse::StoreWarehouseSchema};
 
 pub async fn index(State(db): State<DB>) -> impl IntoResponse {
-    let warehouses = match services::warehouse::all(&db).await {
+    let mut connection = match db.acquire().await {
+        Ok(connection) => connection,
+        Err(err) => {
+            error!("{err}");
+            return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+        }
+    };
+
+    let warehouses = match services::warehouse::all(&mut connection).await {
         Ok(warehouses) => warehouses,
         Err(err) => {
             error!("{err}");
@@ -22,7 +30,15 @@ pub async fn index(State(db): State<DB>) -> impl IntoResponse {
 }
 
 pub async fn show(Path(id): Path<Uuid>, State(db): State<DB>) -> impl IntoResponse {
-    let warehouse = match services::warehouse::find(&id, &db).await {
+    let mut connection = match db.acquire().await {
+        Ok(connection) => connection,
+        Err(err) => {
+            error!("{err}");
+            return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+        }
+    };
+
+    let warehouse = match services::warehouse::find(&id, &mut connection).await {
         Ok(Some(warehouse)) => warehouse,
         Ok(None) => {
             return (StatusCode::NOT_FOUND).into_response();
@@ -40,7 +56,15 @@ pub async fn store(
     State(db): State<DB>,
     Json(input): Json<StoreWarehouseSchema>,
 ) -> impl IntoResponse {
-    if let Err(err) = services::warehouse::insert(&input, &db).await {
+    let mut connection = match db.acquire().await {
+        Ok(connection) => connection,
+        Err(err) => {
+            error!("{err}");
+            return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+        }
+    };
+
+    if let Err(err) = services::warehouse::insert(&input, &mut connection).await {
         error!("{err}");
         return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
     };
@@ -53,7 +77,15 @@ pub async fn update(
     State(db): State<DB>,
     Json(input): Json<StoreWarehouseSchema>,
 ) -> impl IntoResponse {
-    if let Err(err) = services::warehouse::update(&id, &input, &db).await {
+    let mut connection = match db.acquire().await {
+        Ok(connection) => connection,
+        Err(err) => {
+            error!("{err}");
+            return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+        }
+    };
+
+    if let Err(err) = services::warehouse::update(&id, &input, &mut connection).await {
         error!("{err}");
         return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
     };
@@ -62,7 +94,15 @@ pub async fn update(
 }
 
 pub async fn destroy(Path(id): Path<Uuid>, State(db): State<DB>) -> impl IntoResponse {
-    if let Err(err) = services::warehouse::delete(&id, &db).await {
+    let mut connection = match db.acquire().await {
+        Ok(connection) => connection,
+        Err(err) => {
+            error!("{err}");
+            return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+        }
+    };
+
+    if let Err(err) = services::warehouse::delete(&id, &mut connection).await {
         error!("{err}");
         return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
     };

@@ -1,0 +1,27 @@
+# .githooks/pre-commit
+#!/bin/bash
+
+# Run the command to generate files
+echo "Generating schema files..."
+
+if ! cargo sqlx prepare; then
+    echo "Error: Failed to generate files."
+    exit 1  # Exit with a non-zero status to abort the commit
+fi
+
+# Add the generated files to the staging area
+# Add the generated files to the staging area
+if ! git add .; then
+    echo "Error: Failed to add generated files to staging."
+    exit 1  # Abort the commit
+fi
+
+# Check if any changes were added to the commit
+if ! git diff --cached --quiet; then
+    echo "Generated files have been staged for commit."
+else
+    echo "No changes to add."
+fi
+
+# Allow the commit to proceed
+exit 0

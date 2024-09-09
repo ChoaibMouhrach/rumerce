@@ -13,7 +13,15 @@ use log::error;
 use uuid::Uuid;
 
 pub async fn index(State(db): State<DB>) -> impl IntoResponse {
-    let units = match services::unit::all(&db).await {
+    let mut connection = match db.acquire().await {
+        Ok(connection) => connection,
+        Err(err) => {
+            error!("{err}");
+            return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+        }
+    };
+
+    let units = match services::unit::all(&mut connection).await {
         Ok(units) => units,
         Err(err) => {
             error!("{err}");
@@ -25,7 +33,15 @@ pub async fn index(State(db): State<DB>) -> impl IntoResponse {
 }
 
 pub async fn show(Path(id): Path<Uuid>, State(db): State<DB>) -> impl IntoResponse {
-    let unit = match services::unit::find(&id, &db).await {
+    let mut connection = match db.acquire().await {
+        Ok(connection) => connection,
+        Err(err) => {
+            error!("{err}");
+            return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+        }
+    };
+
+    let unit = match services::unit::find(&id, &mut connection).await {
         Ok(Some(unit)) => unit,
         Ok(None) => {
             return (StatusCode::NOT_FOUND).into_response();
@@ -40,7 +56,15 @@ pub async fn show(Path(id): Path<Uuid>, State(db): State<DB>) -> impl IntoRespon
 }
 
 pub async fn store(State(db): State<DB>, Json(input): Json<StoreUnitSchema>) -> impl IntoResponse {
-    if let Err(err) = services::unit::insert(&input, &db).await {
+    let mut connection = match db.acquire().await {
+        Ok(connection) => connection,
+        Err(err) => {
+            error!("{err}");
+            return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+        }
+    };
+
+    if let Err(err) = services::unit::insert(&input, &mut connection).await {
         error!("{err}");
         return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
     };
@@ -53,7 +77,15 @@ pub async fn update(
     State(db): State<DB>,
     Json(input): Json<UpdateUnitSchema>,
 ) -> impl IntoResponse {
-    if let Err(err) = services::unit::update(&id, &input, &db).await {
+    let mut connection = match db.acquire().await {
+        Ok(connection) => connection,
+        Err(err) => {
+            error!("{err}");
+            return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+        }
+    };
+
+    if let Err(err) = services::unit::update(&id, &input, &mut connection).await {
         error!("{err}");
         return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
     };
@@ -62,7 +94,15 @@ pub async fn update(
 }
 
 pub async fn destroy(Path(id): Path<Uuid>, State(db): State<DB>) -> impl IntoResponse {
-    if let Err(err) = services::unit::destroy(&id, &db).await {
+    let mut connection = match db.acquire().await {
+        Ok(connection) => connection,
+        Err(err) => {
+            error!("{err}");
+            return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+        }
+    };
+
+    if let Err(err) = services::unit::destroy(&id, &mut connection).await {
         error!("{err}");
         return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
     };

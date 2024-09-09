@@ -5,12 +5,21 @@ use axum::{
     Json,
 };
 use log::error;
+use sqlx::Acquire;
 use uuid::Uuid;
 
 use crate::{services, utils::db::DB, validations::product::StoreProductSchema};
 
 pub async fn index(State(db): State<DB>) -> impl IntoResponse {
-    let products = match services::product::all(&db).await {
+    let mut connection = match db.acquire().await {
+        Ok(connection) => connection,
+        Err(err) => {
+            error!("{err}");
+            return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+        }
+    };
+
+    let products = match services::product::all(&mut connection).await {
         Ok(products) => products,
         Err(err) => {
             error!("{err}");
@@ -22,7 +31,15 @@ pub async fn index(State(db): State<DB>) -> impl IntoResponse {
 }
 
 pub async fn show(Path(id): Path<Uuid>, State(db): State<DB>) -> impl IntoResponse {
-    let product = match services::product::find(&id, &db).await {
+    let mut connection = match db.acquire().await {
+        Ok(connection) => connection,
+        Err(err) => {
+            error!("{err}");
+            return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+        }
+    };
+
+    let product = match services::product::find(&id, &mut connection).await {
         Ok(Some(product)) => product,
         Ok(None) => {
             return (StatusCode::NOT_FOUND).into_response();
@@ -40,16 +57,47 @@ pub async fn store(
     State(db): State<DB>,
     Json(input): Json<StoreProductSchema>,
 ) -> impl IntoResponse {
-    let product = match services::product::insert(&input, &db).await {
-        Ok(product) => product,
+    let mut connection = match db.acquire().await {
+        Ok(connection) => connection,
         Err(err) => {
             error!("{err}");
             return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
         }
     };
 
+    let mut tx = match connection.begin().await {
+        Ok(tx) => tx,
+        Err(err) => {
+            error!("{err}");
+            return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+        }
+    };
+
+    let product = match services::product::insert(&input, &mut tx).await {
+        Ok(product) => product,
+        Err(err) => {
+            error!("{err}");
+
+            if let Err(err) = tx.rollback().await {
+                error!("{err}");
+            }
+
+            return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+        }
+    };
+
     // attach variants
-    if let Err(err) = product.attach_variants(&input.variants, &db).await {
+    if let Err(err) = product.attach_variants(&input.variants, &mut tx).await {
+        error!("{err}");
+
+        if let Err(err) = tx.rollback().await {
+            error!("{err}");
+        }
+
+        return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+    }
+
+    if let Err(err) = tx.commit().await {
         error!("{err}");
         return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
     }
@@ -62,7 +110,15 @@ pub async fn update(
     State(db): State<DB>,
     Json(input): Json<StoreProductSchema>,
 ) -> impl IntoResponse {
-    let product = match services::product::find(&id, &db).await {
+    let mut connection = match db.acquire().await {
+        Ok(connection) => connection,
+        Err(err) => {
+            error!("{err}");
+            return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+        }
+    };
+
+    let product = match services::product::find(&id, &mut connection).await {
         Ok(Some(product)) => product,
         Ok(None) => {
             return (StatusCode::NOT_FOUND).into_response();
@@ -73,20 +129,46 @@ pub async fn update(
         }
     };
 
+    let mut tx = match connection.begin().await {
+        Ok(tx) => tx,
+        Err(err) => {
+            error!("{err}");
+            return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+        }
+    };
+
     // update product
-    if let Err(err) = services::product::update(&product.product.id, &input, &db).await {
+    if let Err(err) = services::product::update(&product.product.id, &input, &mut tx).await {
         error!("{err}");
+        if let Err(err) = tx.rollback().await {
+            error!("{err}");
+        }
         return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
     };
 
     // detach variants
-    if let Err(err) = product.product.detach_variants(&db).await {
+    if let Err(err) = product.product.detach_variants(&mut tx).await {
         error!("{err}");
+        if let Err(err) = tx.rollback().await {
+            error!("{err}");
+        }
         return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
     };
 
     // attach variants
-    if let Err(err) = product.product.attach_variants(&input.variants, &db).await {
+    if let Err(err) = product
+        .product
+        .attach_variants(&input.variants, &mut tx)
+        .await
+    {
+        error!("{err}");
+        if let Err(err) = tx.rollback().await {
+            error!("{err}");
+        }
+        return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+    }
+
+    if let Err(err) = tx.commit().await {
         error!("{err}");
         return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
     }
@@ -95,7 +177,15 @@ pub async fn update(
 }
 
 pub async fn destroy(Path(id): Path<Uuid>, State(db): State<DB>) -> impl IntoResponse {
-    if let Err(err) = services::product::delete(&id, &db).await {
+    let mut connection = match db.acquire().await {
+        Ok(connection) => connection,
+        Err(err) => {
+            error!("{err}");
+            return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+        }
+    };
+
+    if let Err(err) = services::product::delete(&id, &mut connection).await {
         error!("{err}");
         return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
     }

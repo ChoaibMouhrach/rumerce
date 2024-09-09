@@ -1,4 +1,4 @@
-use sqlx::postgres::PgQueryResult;
+use sqlx::{postgres::PgQueryResult, PgConnection};
 use uuid::Uuid;
 
 use crate::{
@@ -6,11 +6,10 @@ use crate::{
         role::Role,
         user::{PopulatedUser, User},
     },
-    utils::db::DB,
     validations::user::{StoreUserSchema, UpdateUserSchema},
 };
 
-pub async fn all(db: &DB) -> Result<Vec<PopulatedUser>, sqlx::Error> {
+pub async fn all(db: &mut PgConnection) -> Result<Vec<PopulatedUser>, sqlx::Error> {
     sqlx::query_as!(
         PopulatedUser,
         r#"
@@ -21,11 +20,11 @@ pub async fn all(db: &DB) -> Result<Vec<PopulatedUser>, sqlx::Error> {
             JOIN roles ON roles.id = users.role_id
         "#
     )
-    .fetch_all(db)
+    .fetch_all(&mut *db)
     .await
 }
 
-pub async fn find(id: &Uuid, db: &DB) -> Result<Option<PopulatedUser>, sqlx::Error> {
+pub async fn find(id: &Uuid, db: &mut PgConnection) -> Result<Option<PopulatedUser>, sqlx::Error> {
     sqlx::query_as!(
         PopulatedUser,
         r#"
@@ -38,25 +37,28 @@ pub async fn find(id: &Uuid, db: &DB) -> Result<Option<PopulatedUser>, sqlx::Err
         "#,
         id
         )
-        .fetch_optional(db)
+        .fetch_optional(&mut *db)
         .await
 }
 
-pub async fn insert(input: &StoreUserSchema, db: &DB) -> Result<PgQueryResult, sqlx::Error> {
+pub async fn insert(
+    input: &StoreUserSchema,
+    db: &mut PgConnection,
+) -> Result<PgQueryResult, sqlx::Error> {
     sqlx::query!(
         "INSERT INTO users(name, email, role_id) VALUES($1, $2, $3)",
         input.name,
         input.email,
         input.role_id,
     )
-    .execute(db)
+    .execute(&mut *db)
     .await
 }
 
 pub async fn update(
     id: &Uuid,
     input: &UpdateUserSchema,
-    db: &DB,
+    db: &mut PgConnection,
 ) -> Result<PgQueryResult, sqlx::Error> {
     sqlx::query!(
         "UPDATE users SET name = $1, email = $2 WHERE id = $3",
@@ -64,12 +66,12 @@ pub async fn update(
         input.email,
         id
     )
-    .execute(db)
+    .execute(&mut *db)
     .await
 }
 
-pub async fn destroy(id: &Uuid, db: &DB) -> Result<PgQueryResult, sqlx::Error> {
+pub async fn destroy(id: &Uuid, db: &mut PgConnection) -> Result<PgQueryResult, sqlx::Error> {
     sqlx::query!("DELETE FROM users WHERE id = $1", id)
-        .execute(db)
+        .execute(&mut *db)
         .await
 }

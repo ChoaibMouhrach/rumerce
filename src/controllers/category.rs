@@ -14,7 +14,15 @@ use log::error;
 use uuid::Uuid;
 
 pub async fn index(State(db): State<DB>) -> impl IntoResponse {
-    let categories = match services::category::all(&db).await {
+    let mut connection = match db.acquire().await {
+        Ok(connection) => connection,
+        Err(err) => {
+            error!("{err}");
+            return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+        }
+    };
+
+    let categories = match services::category::all(&mut connection).await {
         Ok(categories) => categories,
         Err(err) => {
             error!("{err}");
@@ -26,7 +34,15 @@ pub async fn index(State(db): State<DB>) -> impl IntoResponse {
 }
 
 pub async fn show(Path(id): Path<Uuid>, State(db): State<DB>) -> impl IntoResponse {
-    let category = match services::category::find(&id, &db).await {
+    let mut connection = match db.acquire().await {
+        Ok(connection) => connection,
+        Err(err) => {
+            error!("{err}");
+            return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+        }
+    };
+
+    let category = match services::category::find(&id, &mut connection).await {
         Ok(Some(category)) => category,
         Ok(None) => {
             return (StatusCode::NOT_FOUND).into_response();
@@ -44,7 +60,15 @@ pub async fn store(
     State(db): State<DB>,
     Json(input): Json<StoreCategorySchema>,
 ) -> impl IntoResponse {
-    if let Err(err) = services::category::insert(&input, &db).await {
+    let mut connection = match db.acquire().await {
+        Ok(connection) => connection,
+        Err(err) => {
+            error!("{err}");
+            return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+        }
+    };
+
+    if let Err(err) = services::category::insert(&input, &mut connection).await {
         error!("{err}");
         return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
     }
@@ -57,7 +81,15 @@ pub async fn update(
     State(db): State<DB>,
     Json(input): Json<UpdateCategorySchema>,
 ) -> impl IntoResponse {
-    if let Err(err) = services::category::update(&id, &input, &db).await {
+    let mut connection = match db.acquire().await {
+        Ok(connection) => connection,
+        Err(err) => {
+            error!("{err}");
+            return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+        }
+    };
+
+    if let Err(err) = services::category::update(&id, &input, &mut connection).await {
         error!("{err}");
         return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
     }
@@ -66,7 +98,15 @@ pub async fn update(
 }
 
 pub async fn destroy(Path(id): Path<Uuid>, State(db): State<DB>) -> impl IntoResponse {
-    if let Err(err) = services::category::destroy(&id, &db).await {
+    let mut connection = match db.acquire().await {
+        Ok(connection) => connection,
+        Err(err) => {
+            error!("{err}");
+            return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+        }
+    };
+
+    if let Err(err) = services::category::destroy(&id, &mut connection).await {
         error!("{err}");
         return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
     }

@@ -1,9 +1,9 @@
 use chrono::NaiveDateTime;
 use serde::Serialize;
-use sqlx::prelude::FromRow;
+use sqlx::{prelude::FromRow, PgConnection};
 use uuid::Uuid;
 
-use crate::{utils::db::DB, validations::product::Variant};
+use crate::validations::product::Variant;
 
 use super::{category::Category, unit::Unit};
 
@@ -21,7 +21,7 @@ impl Product {
     pub async fn attach_variants(
         &self,
         input_variants: &Vec<Variant>,
-        db: &DB,
+        db: &mut PgConnection,
     ) -> Result<(), sqlx::Error> {
         // prepare keys
         let mut raw_keys: Vec<String> = Vec::new();
@@ -44,7 +44,7 @@ impl Product {
                 self.id
              }).collect::<Vec<Uuid>>(),
             )
-    .fetch_all(db)
+    .fetch_all(&mut *db)
     .await?;
 
         // prepare values
@@ -67,7 +67,7 @@ impl Product {
         &raw_values.iter().map(|(_, value)| value.clone()).collect::<Vec<String>>(),
         &raw_values.iter().map(|(key_id, _)| key_id.clone()).collect::<Vec<Uuid>>(),
     )
-    .fetch_all(db)
+    .fetch_all(&mut *db)
     .await?;
 
         // prepare variants
@@ -85,7 +85,7 @@ impl Product {
             self.id
         }).collect::<Vec<Uuid>>()
     )
-    .fetch_all(db)
+    .fetch_all(&mut *db)
     .await?;
 
         // prepare collections variants
@@ -133,25 +133,25 @@ impl Product {
         &keys_ids,
         &values_ids
     )
-    .fetch_all(db)
+    .fetch_all(&mut *db)
     .await?;
 
         Ok(())
     }
 
-    pub async fn detach_variants(&self, db: &DB) -> Result<(), sqlx::Error> {
+    pub async fn detach_variants(&self, db: &mut PgConnection) -> Result<(), sqlx::Error> {
         sqlx::query!(
             "DELETE FROM product_variants WHERE product_id = $1",
             self.id
         )
-        .execute(db)
+        .execute(&mut *db)
         .await?;
 
         sqlx::query!(
             "DELETE FROM product_variant_collection_keys WHERE product_id = $1",
             self.id
         )
-        .execute(db)
+        .execute(&mut *db)
         .await?;
 
         Ok(())
