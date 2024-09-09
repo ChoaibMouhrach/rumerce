@@ -1,0 +1,27 @@
+name: Cargo Build on Main Branch
+
+# Trigger the workflow when pushing to the main branch
+on:
+  push:
+    branches:
+      - main
+
+# Define the job to run the build
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out the code from the main branch
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Set up Rust environment
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable # You can change this to nightly or any specific version if needed
+
+      # Step 3: Build the project using Cargo
+      - name: Build with Cargo
+        run: cargo build --verbose
