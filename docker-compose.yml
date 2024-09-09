@@ -1,0 +1,9 @@
+services:
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: root  # Replace with your desired username
+      POSTGRES_PASSWORD: 3636  # Replace with your desired password
+      POSTGRES_DB: rumerce  # Replace with your desired database name
+    ports:
+      - "5432:5432"  # Maps port 5432 of the container to port 5432 on the host

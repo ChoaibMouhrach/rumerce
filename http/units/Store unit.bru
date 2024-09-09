@@ -1,0 +1,17 @@
+meta {
+  name: Store unit
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://localhost:3000/units
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Piece"
+  }
+}

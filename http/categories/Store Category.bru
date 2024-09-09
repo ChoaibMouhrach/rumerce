@@ -1,0 +1,17 @@
+meta {
+  name: Store Category
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://localhost:3000/categories
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Laptop"
+  }
+}

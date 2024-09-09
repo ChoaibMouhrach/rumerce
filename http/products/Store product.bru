@@ -1,0 +1,47 @@
+meta {
+  name: Store product
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://localhost:3000/products
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Product 1",
+    "unit_id": "fdd192ee-9a03-46c0-9e29-e3b9dfddac83",
+    "category_id": "73d5f5eb-6ef8-4846-b4cd-443cf764b474",
+    "variants": [
+      {
+        "options": [
+          {
+            "key": "Color",
+            "value": "Red"
+          },
+          {
+            "key": "Size",
+            "value": "XL"
+          }
+        ],
+        "price": 100
+      },
+      {
+        "options": [
+          {
+            "key": "Color",
+            "value": "Red"
+          },
+          {
+            "key": "Size",
+            "value": "L"
+          }
+        ],
+        "price": 100
+      }
+    ]
+  }
+}
