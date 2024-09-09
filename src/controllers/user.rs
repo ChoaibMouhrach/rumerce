@@ -1,8 +1,10 @@
 use axum::{
     extract::{Path, State},
+    http::StatusCode,
     response::IntoResponse,
     Json,
 };
+use log::error;
 use uuid::Uuid;
 
 use crate::{
@@ -12,17 +14,39 @@ use crate::{
 };
 
 pub async fn index(State(db): State<DB>) -> impl IntoResponse {
-    let users = services::user::all(&db).await;
-    Json(users)
+    let users = match services::user::all(&db).await {
+        Ok(users) => users,
+        Err(err) => {
+            error!("{err}");
+            return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+        }
+    };
+
+    Json(users).into_response()
 }
 
 pub async fn show(Path(id): Path<Uuid>, State(db): State<DB>) -> impl IntoResponse {
-    let user = services::user::find(&id, &db).await;
-    Json(user)
+    let user = match services::user::find(&id, &db).await {
+        Ok(Some(user)) => user,
+        Ok(None) => {
+            return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+        }
+        Err(err) => {
+            error!("{err}");
+            return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+        }
+    };
+
+    Json(user).into_response()
 }
 
 pub async fn store(State(db): State<DB>, Json(input): Json<StoreUserSchema>) -> impl IntoResponse {
-    services::user::insert(&input, &db).await;
+    if let Err(err) = services::user::insert(&input, &db).await {
+        error!("{err}");
+        return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+    }
+
+    (StatusCode::CREATED).into_response()
 }
 
 pub async fn update(
@@ -30,9 +54,19 @@ pub async fn update(
     State(db): State<DB>,
     Json(input): Json<UpdateUserSchema>,
 ) -> impl IntoResponse {
-    services::user::update(&id, &input, &db).await;
+    if let Err(err) = services::user::update(&id, &input, &db).await {
+        error!("{err}");
+        return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+    }
+
+    ().into_response()
 }
 
 pub async fn destroy(Path(id): Path<Uuid>, State(db): State<DB>) -> impl IntoResponse {
-    services::user::destroy(&id, &db).await;
+    if let Err(err) = services::user::destroy(&id, &db).await {
+        error!("{err}");
+        return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+    }
+
+    ().into_response()
 }

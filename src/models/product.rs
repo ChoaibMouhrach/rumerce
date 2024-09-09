@@ -18,7 +18,11 @@ pub struct Product {
 }
 
 impl Product {
-    pub async fn attach_variants(&self, input_variants: &Vec<Variant>, db: &DB) {
+    pub async fn attach_variants(
+        &self,
+        input_variants: &Vec<Variant>,
+        db: &DB,
+    ) -> Result<(), sqlx::Error> {
         // prepare keys
         let mut raw_keys: Vec<String> = Vec::new();
         input_variants.iter().for_each(|variant| {
@@ -41,8 +45,7 @@ impl Product {
              }).collect::<Vec<Uuid>>(),
             )
     .fetch_all(db)
-    .await
-    .unwrap();
+    .await?;
 
         // prepare values
         let mut raw_values: Vec<(Uuid, String)> = Vec::new();
@@ -65,8 +68,7 @@ impl Product {
         &raw_values.iter().map(|(key_id, _)| key_id.clone()).collect::<Vec<Uuid>>(),
     )
     .fetch_all(db)
-    .await
-    .unwrap();
+    .await?;
 
         // prepare variants
         let mut prices: Vec<f32> = Vec::new();
@@ -84,8 +86,7 @@ impl Product {
         }).collect::<Vec<Uuid>>()
     )
     .fetch_all(db)
-    .await
-    .unwrap();
+    .await?;
 
         // prepare collections variants
         let mut variants_ids: Vec<Uuid> = Vec::new();
@@ -133,26 +134,27 @@ impl Product {
         &values_ids
     )
     .fetch_all(db)
-    .await
-    .unwrap();
+    .await?;
+
+        Ok(())
     }
 
-    pub async fn detach_variants(&self, db: &DB) {
+    pub async fn detach_variants(&self, db: &DB) -> Result<(), sqlx::Error> {
         sqlx::query!(
             "DELETE FROM product_variants WHERE product_id = $1",
             self.id
         )
         .execute(db)
-        .await
-        .unwrap();
+        .await?;
 
         sqlx::query!(
             "DELETE FROM product_variant_collection_keys WHERE product_id = $1",
             self.id
         )
         .execute(db)
-        .await
-        .unwrap();
+        .await?;
+
+        Ok(())
     }
 }
 

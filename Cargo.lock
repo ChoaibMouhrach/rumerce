@@ -1188,6 +1188,7 @@ dependencies = [
  "axum",
  "chrono",
  "dotenvy",
+ "log",
  "serde",
  "sqlx",
  "tokio",

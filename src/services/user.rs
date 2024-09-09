@@ -1,3 +1,4 @@
+use sqlx::postgres::PgQueryResult;
 use uuid::Uuid;
 
 use crate::{
@@ -9,7 +10,7 @@ use crate::{
     validations::user::{StoreUserSchema, UpdateUserSchema},
 };
 
-pub async fn all(db: &DB) -> Vec<PopulatedUser> {
+pub async fn all(db: &DB) -> Result<Vec<PopulatedUser>, sqlx::Error> {
     sqlx::query_as!(
         PopulatedUser,
         r#"
@@ -22,11 +23,10 @@ pub async fn all(db: &DB) -> Vec<PopulatedUser> {
     )
     .fetch_all(db)
     .await
-    .unwrap()
 }
 
-pub async fn find(id: &Uuid, db: &DB) -> Option<PopulatedUser> {
-    let user = sqlx::query_as!(
+pub async fn find(id: &Uuid, db: &DB) -> Result<Option<PopulatedUser>, sqlx::Error> {
+    sqlx::query_as!(
         PopulatedUser,
         r#"
             SELECT 
@@ -40,12 +40,9 @@ pub async fn find(id: &Uuid, db: &DB) -> Option<PopulatedUser> {
         )
         .fetch_optional(db)
         .await
-        .unwrap()?;
-
-    return Some(user);
 }
 
-pub async fn insert(input: &StoreUserSchema, db: &DB) {
+pub async fn insert(input: &StoreUserSchema, db: &DB) -> Result<PgQueryResult, sqlx::Error> {
     sqlx::query!(
         "INSERT INTO users(name, email, role_id) VALUES($1, $2, $3)",
         input.name,
@@ -54,10 +51,13 @@ pub async fn insert(input: &StoreUserSchema, db: &DB) {
     )
     .execute(db)
     .await
-    .unwrap();
 }
 
-pub async fn update(id: &Uuid, input: &UpdateUserSchema, db: &DB) {
+pub async fn update(
+    id: &Uuid,
+    input: &UpdateUserSchema,
+    db: &DB,
+) -> Result<PgQueryResult, sqlx::Error> {
     sqlx::query!(
         "UPDATE users SET name = $1, email = $2 WHERE id = $3",
         input.name,
@@ -66,12 +66,10 @@ pub async fn update(id: &Uuid, input: &UpdateUserSchema, db: &DB) {
     )
     .execute(db)
     .await
-    .unwrap();
 }
 
-pub async fn destroy(id: &Uuid, db: &DB) {
+pub async fn destroy(id: &Uuid, db: &DB) -> Result<PgQueryResult, sqlx::Error> {
     sqlx::query!("DELETE FROM users WHERE id = $1", id)
         .execute(db)
         .await
-        .unwrap();
 }

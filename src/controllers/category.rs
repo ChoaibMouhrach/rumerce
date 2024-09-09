@@ -6,36 +6,70 @@ use crate::{
 
 use axum::{
     extract::{Path, State},
+    http::StatusCode,
     response::IntoResponse,
     Json,
 };
+use log::error;
 use uuid::Uuid;
 
 pub async fn index(State(db): State<DB>) -> impl IntoResponse {
-    let categories = services::category::all(&db).await;
-    Json(categories)
+    let categories = match services::category::all(&db).await {
+        Ok(categories) => categories,
+        Err(err) => {
+            error!("{err}");
+            return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+        }
+    };
+
+    Json(categories).into_response()
 }
 
 pub async fn show(Path(id): Path<Uuid>, State(db): State<DB>) -> impl IntoResponse {
-    let category = services::category::find(&id, &db).await.unwrap();
-    Json(category)
+    let category = match services::category::find(&id, &db).await {
+        Ok(Some(category)) => category,
+        Ok(None) => {
+            return (StatusCode::NOT_FOUND).into_response();
+        }
+        Err(err) => {
+            error!("{err}");
+            return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+        }
+    };
+
+    Json(category).into_response()
 }
 
 pub async fn store(
     State(db): State<DB>,
     Json(input): Json<StoreCategorySchema>,
 ) -> impl IntoResponse {
-    services::category::insert(&input, &db).await;
+    if let Err(err) = services::category::insert(&input, &db).await {
+        error!("{err}");
+        return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+    }
+
+    (StatusCode::CREATED).into_response()
 }
 
 pub async fn update(
     Path(id): Path<Uuid>,
     State(db): State<DB>,
     Json(input): Json<UpdateCategorySchema>,
-) {
-    services::category::update(&id, &input, &db).await;
+) -> impl IntoResponse {
+    if let Err(err) = services::category::update(&id, &input, &db).await {
+        error!("{err}");
+        return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+    }
+
+    ().into_response()
 }
 
-pub async fn destroy(Path(id): Path<Uuid>, State(db): State<DB>) {
-    services::category::destroy(&id, &db).await;
+pub async fn destroy(Path(id): Path<Uuid>, State(db): State<DB>) -> impl IntoResponse {
+    if let Err(err) = services::category::destroy(&id, &db).await {
+        error!("{err}");
+        return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+    }
+
+    ().into_response()
 }
