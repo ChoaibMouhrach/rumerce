@@ -1,0 +1,18 @@
+meta {
+  name: Update item
+  type: http
+  seq: 4
+}
+
+patch {
+  url: http://localhost:3000/carts/a62f7f17-1c12-4715-8370-582f84a8b105
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "variant_id": "80d7382d-c17b-4100-b1ce-8a99d781962d",
+    "quantity": 150
+  }
+}

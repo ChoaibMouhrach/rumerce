@@ -1,0 +1,18 @@
+meta {
+  name: Add to cart
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://localhost:3000/carts
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "variant_id": "80d7382d-c17b-4100-b1ce-8a99d781962d",
+    "quantity": 120
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            WITH new_cart AS (\n                INSERT INTO carts(user_id) VALUES ($1) RETURNING *\n            ) \n            SELECT \n                (new_cart.id, new_cart.user_id) as \"cart!: Cart\",\n                array_agg((cart_items.id, cart_items.quantity, cart_items.cart_id, cart_items.variant_id)) as \"items!: Vec<CartItem>\"\n            FROM new_cart\n            LEFT JOIN cart_items ON new_cart.id = cart_items.cart_id\n            GROUP BY new_cart.id, \"cart!: Cart\"\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "cart!: Cart",
+        "type_info": "Record"
+      },
+      {
+        "ordinal": 1,
+        "name": "items!: Vec<CartItem>",
+        "type_info": "RecordArray"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null,
+      null
+    ]
+  },
+  "hash": "5ce9c35bd093f92bed6f8ca9932427483d051c75636dcbfa6f85487bfe8e2f56"
+}

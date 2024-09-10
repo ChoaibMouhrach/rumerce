@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE cart_items SET variant_id = $3, cart_id = $4, quantity = $5 WHERE cart_id = $1 AND id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "71bd91950150d5c1d7149c049084430b4b7062130120ff974435b55ff9e2e0e5"
+}

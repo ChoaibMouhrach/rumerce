@@ -1,7 +1,8 @@
 use crate::{
-    controllers::{auth, cart, category, product, role, unit, user, warehouse},
+    controllers::{auth, category, product, role, unit, user, warehouse},
     services, AppState,
 };
+
 use axum::{
     extract::{Request, State},
     http::{header, HeaderMap, StatusCode},
@@ -131,13 +132,6 @@ pub fn init(state: AppState) -> Router<AppState> {
         .route("/products/:id", patch(product::update))
         .route("/products/:id", delete(product::destroy));
 
-    let cart_router = Router::new()
-        .route("/carts", get(cart::index))
-        .route("/carts/:id", get(cart::show))
-        .route("/carts", post(cart::store))
-        .route("/carts/:id", patch(cart::update))
-        .route("/carts/:id", delete(cart::destroy));
-
     let auth_router = Router::new()
         .route("/sign-out", post(auth::sign_out))
         .route("/profile", get(auth::profile));
@@ -149,7 +143,6 @@ pub fn init(state: AppState) -> Router<AppState> {
         .merge(unit_router)
         .merge(warehouse_router)
         .merge(product_router)
-        .merge(cart_router)
         .merge(auth_router)
         .route_layer(from_fn_with_state(state, auth_middleware))
 }

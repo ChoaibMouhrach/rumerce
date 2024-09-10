@@ -33,7 +33,7 @@ pub async fn run() {
 
     let state = Arc::new(State { env, db, resend });
 
-    let guest_router = guest::init();
+    let guest_router = guest::init(state.clone());
     let auth_router = auth::init(state.clone());
     let app = Router::new()
         .merge(guest_router)
