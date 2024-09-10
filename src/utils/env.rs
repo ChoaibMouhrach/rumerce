@@ -1,9 +1,15 @@
 use dotenvy::dotenv;
 use std::env;
 
+#[derive(Clone)]
 pub struct Env {
     // APP
     pub app_url: String,
+    pub app_secret: String,
+
+    // RESEND
+    pub resend_token: String,
+    pub resend_domain: String,
 
     // DATABASE
     pub database_url: String,
@@ -15,6 +21,11 @@ pub fn init() -> Env {
     Env {
         // APP
         app_url: env::var("APP_URL").unwrap(),
+        app_secret: env::var("APP_SECRET").unwrap(),
+
+        // RESEND
+        resend_token: env::var("RESEND_TOKEN").unwrap(),
+        resend_domain: env::var("RESEND_DOMAIN").unwrap(),
 
         // DATABASE
         database_url: env::var("DATABASE_URL").unwrap(),

@@ -1,0 +1,30 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            WITH new_user AS (\n                INSERT INTO users(name, email, role_id) VALUES($1, $2, $3) RETURNING *\n            )\n            SELECT \n                (new_user.id, new_user.name, new_user.email, new_user.role_id, new_user.created_at) as \"user!: User\",\n                (roles.id, roles.name, roles.created_at) as \"role!: Role\"\n            FROM new_user\n            JOIN roles ON roles.id = new_user.role_id\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user!: User",
+        "type_info": "Record"
+      },
+      {
+        "ordinal": 1,
+        "name": "role!: Role",
+        "type_info": "Record"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null,
+      null
+    ]
+  },
+  "hash": "dd7ab01507f7e0b817b00dbbf39a2d4247136cd02a4b906ab0bd34875f6dc812"
+}

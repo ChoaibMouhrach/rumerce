@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT \n                (sessions.id, sessions.session, sessions.user_id, sessions.created_at) as \"session!: Session\" ,\n                (users.id, users.name, users.email, users.role_id, users.created_at) as \"user!: User\"\n            FROM sessions\n            JOIN users ON users.id = sessions.user_id\n            WHERE sessions.id = $1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "session!: Session",
+        "type_info": "Record"
+      },
+      {
+        "ordinal": 1,
+        "name": "user!: User",
+        "type_info": "Record"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null,
+      null
+    ]
+  },
+  "hash": "512ba9df62decca78fca90c74c43c6d21213fe1aff8c5d8e7942db44b5c11ce1"
+}

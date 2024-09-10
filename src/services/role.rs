@@ -17,6 +17,12 @@ pub async fn find(id: &Uuid, db: &mut PgConnection) -> Result<Option<Role>, sqlx
         .await
 }
 
+pub async fn find_by_name(name: &str, db: &mut PgConnection) -> Result<Option<Role>, sqlx::Error> {
+    sqlx::query_as!(Role, "SELECT * FROM roles WHERE name = $1", name)
+        .fetch_optional(&mut *db)
+        .await
+}
+
 pub async fn insert(
     input: &StoreRoleSchema,
     db: &mut PgConnection,

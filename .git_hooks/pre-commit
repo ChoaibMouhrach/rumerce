@@ -11,7 +11,7 @@ fi
 
 # Add the generated files to the staging area
 # Add the generated files to the staging area
-if ! git add .; then
+if ! git add . ; then
     echo "Error: Failed to add generated files to staging."
     exit 1  # Abort the commit
 fi

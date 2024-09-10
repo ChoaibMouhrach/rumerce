@@ -1,7 +1,7 @@
 use crate::{
     services,
-    utils::db::DB,
     validations::category::{StoreCategorySchema, UpdateCategorySchema},
+    AppState,
 };
 
 use axum::{
@@ -13,8 +13,8 @@ use axum::{
 use log::error;
 use uuid::Uuid;
 
-pub async fn index(State(db): State<DB>) -> impl IntoResponse {
-    let mut connection = match db.acquire().await {
+pub async fn index(State(state): State<AppState>) -> impl IntoResponse {
+    let mut connection = match state.db.acquire().await {
         Ok(connection) => connection,
         Err(err) => {
             error!("{err}");
@@ -33,8 +33,8 @@ pub async fn index(State(db): State<DB>) -> impl IntoResponse {
     Json(categories).into_response()
 }
 
-pub async fn show(Path(id): Path<Uuid>, State(db): State<DB>) -> impl IntoResponse {
-    let mut connection = match db.acquire().await {
+pub async fn show(Path(id): Path<Uuid>, State(state): State<AppState>) -> impl IntoResponse {
+    let mut connection = match state.db.acquire().await {
         Ok(connection) => connection,
         Err(err) => {
             error!("{err}");
@@ -57,10 +57,10 @@ pub async fn show(Path(id): Path<Uuid>, State(db): State<DB>) -> impl IntoRespon
 }
 
 pub async fn store(
-    State(db): State<DB>,
+    State(state): State<AppState>,
     Json(input): Json<StoreCategorySchema>,
 ) -> impl IntoResponse {
-    let mut connection = match db.acquire().await {
+    let mut connection = match state.db.acquire().await {
         Ok(connection) => connection,
         Err(err) => {
             error!("{err}");
@@ -78,10 +78,10 @@ pub async fn store(
 
 pub async fn update(
     Path(id): Path<Uuid>,
-    State(db): State<DB>,
+    State(state): State<AppState>,
     Json(input): Json<UpdateCategorySchema>,
 ) -> impl IntoResponse {
-    let mut connection = match db.acquire().await {
+    let mut connection = match state.db.acquire().await {
         Ok(connection) => connection,
         Err(err) => {
             error!("{err}");
@@ -97,8 +97,8 @@ pub async fn update(
     ().into_response()
 }
 
-pub async fn destroy(Path(id): Path<Uuid>, State(db): State<DB>) -> impl IntoResponse {
-    let mut connection = match db.acquire().await {
+pub async fn destroy(Path(id): Path<Uuid>, State(state): State<AppState>) -> impl IntoResponse {
+    let mut connection = match state.db.acquire().await {
         Ok(connection) => connection,
         Err(err) => {
             error!("{err}");

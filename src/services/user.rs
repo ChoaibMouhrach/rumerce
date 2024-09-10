@@ -41,17 +41,47 @@ pub async fn find(id: &Uuid, db: &mut PgConnection) -> Result<Option<PopulatedUs
         .await
 }
 
+pub async fn find_by_email(
+    email: &str,
+    db: &mut PgConnection,
+) -> Result<Option<PopulatedUser>, sqlx::Error> {
+    sqlx::query_as!(
+        PopulatedUser,
+        r#"
+            SELECT 
+                (users.id, users.name, users.email, users.role_id, users.created_at) as "user!: User",
+                (roles.id, roles.name, roles.created_at) as "role!: Role"
+            FROM users 
+            JOIN roles ON roles.id = users.role_id
+            WHERE users.email = $1
+        "#,
+        email
+        )
+        .fetch_optional(&mut *db)
+        .await
+}
+
 pub async fn insert(
     input: &StoreUserSchema,
     db: &mut PgConnection,
-) -> Result<PgQueryResult, sqlx::Error> {
-    sqlx::query!(
-        "INSERT INTO users(name, email, role_id) VALUES($1, $2, $3)",
+) -> Result<PopulatedUser, sqlx::Error> {
+    sqlx::query_as!(
+        PopulatedUser,
+        r#"
+            WITH new_user AS (
+                INSERT INTO users(name, email, role_id) VALUES($1, $2, $3) RETURNING *
+            )
+            SELECT 
+                (new_user.id, new_user.name, new_user.email, new_user.role_id, new_user.created_at) as "user!: User",
+                (roles.id, roles.name, roles.created_at) as "role!: Role"
+            FROM new_user
+            JOIN roles ON roles.id = new_user.role_id
+        "#,
         input.name,
         input.email,
         input.role_id,
     )
-    .execute(&mut *db)
+    .fetch_one(&mut *db)
     .await
 }
 

@@ -1,3 +1,4 @@
+pub mod auth;
 pub mod cart;
 pub mod category;
 pub mod product;
