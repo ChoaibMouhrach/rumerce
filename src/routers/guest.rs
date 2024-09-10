@@ -2,6 +2,7 @@ use crate::{
     controllers::auth::{auth, sign_in},
     AppState,
 };
+
 use axum::{
     routing::{get, post},
     Router,

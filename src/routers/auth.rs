@@ -138,7 +138,9 @@ pub fn init(state: AppState) -> Router<AppState> {
         .route("/carts/:id", patch(cart::update))
         .route("/carts/:id", delete(cart::destroy));
 
-    let auth_router = Router::new().route("/sign-out", post(auth::sign_out));
+    let auth_router = Router::new()
+        .route("/sign-out", post(auth::sign_out))
+        .route("/profile", get(auth::profile));
 
     Router::new()
         .merge(role_router)

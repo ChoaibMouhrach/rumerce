@@ -3,7 +3,7 @@ use uuid::Uuid;
 
 use crate::{
     models::session::{PopulatedSession, Session},
-    models::user::User,
+    models::{role::Role, user::User},
     validations::auth::StoreSessionSchema,
 };
 
@@ -16,9 +16,11 @@ pub async fn find(
         r#"
             SELECT 
                 (sessions.id, sessions.session, sessions.user_id, sessions.created_at) as "session!: Session" ,
-                (users.id, users.name, users.email, users.role_id, users.created_at) as "user!: User"
+                (users.id, users.name, users.email, users.role_id, users.created_at) as "user!: User",
+                (roles.id, roles.name, roles.created_at) as "role!: Role"
             FROM sessions
             JOIN users ON users.id = sessions.user_id
+            JOIN roles ON users.role_id = roles.id
             WHERE sessions.id = $1
         "#,
         id
@@ -34,9 +36,11 @@ pub async fn find_by_session(
         r#"
             SELECT 
                 (sessions.id, sessions.session, sessions.user_id, sessions.created_at) as "session!: Session" ,
-                (users.id, users.name, users.email, users.role_id, users.created_at) as "user!: User"
+                (users.id, users.name, users.email, users.role_id, users.created_at) as "user!: User",
+                (roles.id, roles.name, roles.created_at) as "role!: Role"
             FROM sessions
             JOIN users ON users.id = sessions.user_id
+            JOIN roles ON users.role_id = roles.id
             WHERE sessions.session = $1
         "#,
         session

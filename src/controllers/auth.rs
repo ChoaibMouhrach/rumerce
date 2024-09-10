@@ -13,11 +13,12 @@ use chrono::{Duration, Utc};
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 use log::error;
 use resend_rs::types::CreateEmailBaseOptions;
+use serde::Serialize;
 use url::Url;
 use uuid::Uuid;
 
 use crate::{
-    models::session::PopulatedSession,
+    models::{role::Role, session::PopulatedSession, user::User},
     services,
     utils::constants::ROLES,
     validations::{
@@ -217,4 +218,18 @@ pub async fn sign_out(
     }
 
     ().into_response()
+}
+
+#[derive(Serialize)]
+struct Profile {
+    pub user: User,
+    pub role: Role,
+}
+
+pub async fn profile(Extension(auth): Extension<PopulatedSession>) -> impl IntoResponse {
+    Json(Profile {
+        user: auth.user,
+        role: auth.role,
+    })
+    .into_response()
 }

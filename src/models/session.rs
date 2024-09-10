@@ -3,7 +3,7 @@ use serde::Serialize;
 use sqlx::prelude::FromRow;
 use uuid::Uuid;
 
-use super::user::User;
+use super::{role::Role, user::User};
 
 #[derive(Serialize, FromRow, sqlx::Type, Clone)]
 pub struct Session {
@@ -17,4 +17,5 @@ pub struct Session {
 pub struct PopulatedSession {
     pub session: Session,
     pub user: User,
+    pub role: Role,
 }
