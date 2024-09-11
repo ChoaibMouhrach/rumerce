@@ -1,0 +1,30 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        WITH new_token AS (\n          INSERT INTO magic_tokens(token, user_id,expires_at) VALUES ($1, $2, $3) RETURNING *\n        )\n        SELECT \n          (users.id, users.name, users.email, users.role_id, users.created_at) as \"user!: User\",\n          (new_token.id, new_token.token, new_token.user_id, new_token.expires_at) as \"token!: MagicToken\"\n        FROM\n          new_token\n        JOIN users ON users.id = new_token.user_id\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user!: User",
+        "type_info": "Record"
+      },
+      {
+        "ordinal": 1,
+        "name": "token!: MagicToken",
+        "type_info": "Record"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Timestamp"
+      ]
+    },
+    "nullable": [
+      null,
+      null
+    ]
+  },
+  "hash": "bb053902ba09e064a2d490601f73b92a6f63b37c8b3ee2cdb2bcfab6e26e3490"
+}

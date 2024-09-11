@@ -7,7 +7,6 @@ use axum::{
     Extension, Json,
 };
 use chrono::{Duration, Utc};
-use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 use log::error;
 use resend_rs::types::CreateEmailBaseOptions;
 use serde::Serialize;
@@ -19,7 +18,8 @@ use crate::{
     services,
     utils::constants::{ROLES, SESSION_COOKIE_NAME},
     validations::{
-        auth::{SignInSchema, SignInTokenSchema, StoreSessionSchema},
+        auth::{SignInSchema, StoreSessionSchema},
+        magic_tokens::StoreMagicTokenSchema,
         user::StoreUserSchema,
     },
     AppState,
@@ -64,7 +64,6 @@ pub async fn sign_in(
                 &StoreUserSchema {
                     name: None,
                     role_id: role.id,
-                    //TODO: Inv later
                     email: input.email.clone(),
                 },
                 &mut connection,
@@ -81,14 +80,17 @@ pub async fn sign_in(
         }
     };
 
-    let token = encode(
-        &Header::default(),
-        &SignInTokenSchema {
+    let token = Uuid::new_v4();
+
+    let token = services::magic_tokens::insert(
+        &StoreMagicTokenSchema {
+            token,
             user_id: user.user.id,
-            exp: (Utc::now() + Duration::minutes(60)).timestamp(),
+            expires_at: Utc::now().naive_utc() + Duration::hours(1),
         },
-        &EncodingKey::from_secret(state.env.app_secret.as_bytes()),
-    );
+        &mut connection,
+    )
+    .await;
 
     let token = match token {
         Ok(token) => token,
@@ -110,7 +112,8 @@ pub async fn sign_in(
     url.set_path("/auth");
 
     // set the token
-    url.query_pairs_mut().append_pair("token", &token);
+    url.query_pairs_mut()
+        .append_pair("token", &token.token.token.to_string());
 
     // prepare the url
     let url = url.to_string();
@@ -137,17 +140,11 @@ pub async fn auth(
     let token = match params.get("token") {
         Some(token) => token,
         None => {
-            return (StatusCode::BAD_REQUEST, Json("Token not found")).into_response();
+            return (StatusCode::BAD_REQUEST, Json("Token not provided")).into_response();
         }
     };
 
-    let token = decode::<SignInTokenSchema>(
-        token,
-        &DecodingKey::from_secret(state.env.app_secret.as_bytes()),
-        &Validation::default(),
-    );
-
-    let token = match token {
+    let token = match Uuid::parse_str(token) {
         Ok(token) => token,
         Err(_) => {
             return (StatusCode::BAD_REQUEST, Json("Invalid token")).into_response();
@@ -162,10 +159,12 @@ pub async fn auth(
         }
     };
 
-    let user = match services::user::find(&token.claims.user_id, &mut connection).await {
-        Ok(Some(user)) => user,
+    let token = services::magic_tokens::find_by_token(&token, &mut connection).await;
+
+    let token = match token {
+        Ok(Some(token)) => token,
         Ok(None) => {
-            return (StatusCode::NOT_FOUND, Json("User not found")).into_response();
+            return (StatusCode::BAD_REQUEST, Json("Token not found")).into_response();
         }
         Err(err) => {
             error!("{err}");
@@ -173,9 +172,18 @@ pub async fn auth(
         }
     };
 
+    if let Err(err) = services::magic_tokens::destroy(&token.token.id, &mut connection).await {
+        error!("{err}");
+        return (StatusCode::INTERNAL_SERVER_ERROR, Json("Token expired")).into_response();
+    };
+
+    if Utc::now().naive_utc() > token.token.created_at {
+        return (StatusCode::BAD_REQUEST, Json("Token expired")).into_response();
+    }
+
     let session = services::sessions::insert(
         StoreSessionSchema {
-            user_id: user.user.id,
+            user_id: token.user.id,
             session: Uuid::new_v4(),
         },
         &mut connection,
