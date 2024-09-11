@@ -18,22 +18,26 @@ pub struct Env {
     pub database_url: String,
 }
 
+fn dot_env(name: &str) -> String {
+    env::var(name).expect(&format!("{} is missing", name))
+}
+
 pub fn init() -> Env {
     dotenv().expect(".env file not found");
 
     Env {
         // APP
-        app_url: env::var("APP_URL").unwrap(),
-        app_secret: env::var("APP_SECRET").unwrap(),
+        app_url: dot_env("APP_URL"),
+        app_secret: dot_env("APP_SECRET"),
 
         // CLIENT
-        client_url: env::var("CLIENT_URL").unwrap(),
+        client_url: dot_env("CLIENT_URL"),
 
         // RESEND
-        resend_token: env::var("RESEND_TOKEN").unwrap(),
-        resend_domain: env::var("RESEND_DOMAIN").unwrap(),
+        resend_token: dot_env("RESEND_TOKEN"),
+        resend_domain: dot_env("RESEND_DOMAIN"),
 
         // DATABASE
-        database_url: env::var("DATABASE_URL").unwrap(),
+        database_url: dot_env("DATABASE_URL"),
     }
 }
