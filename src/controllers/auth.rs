@@ -2,10 +2,7 @@ use std::collections::HashMap;
 
 use axum::{
     extract::{Query, State},
-    http::{
-        header::{self},
-        StatusCode,
-    },
+    http::StatusCode,
     response::IntoResponse,
     Extension, Json,
 };
@@ -101,7 +98,7 @@ pub async fn sign_in(
         }
     };
 
-    let mut url = match Url::parse(&state.env.app_url) {
+    let mut url = match Url::parse(&state.env.client_url) {
         Ok(url) => url,
         Err(err) => {
             error!("{err}");
@@ -193,11 +190,7 @@ pub async fn auth(
         }
     };
 
-    ([(
-        header::SET_COOKIE,
-        format!("{}={}", "session", session.session.to_string()),
-    )])
-    .into_response()
+    (Json(session.session)).into_response()
 }
 
 pub async fn sign_out(

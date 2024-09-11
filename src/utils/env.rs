@@ -7,6 +7,9 @@ pub struct Env {
     pub app_url: String,
     pub app_secret: String,
 
+    // CLIENT
+    pub client_url: String,
+
     // RESEND
     pub resend_token: String,
     pub resend_domain: String,
@@ -22,6 +25,9 @@ pub fn init() -> Env {
         // APP
         app_url: env::var("APP_URL").unwrap(),
         app_secret: env::var("APP_SECRET").unwrap(),
+
+        // CLIENT
+        client_url: env::var("CLIENT_URL").unwrap(),
 
         // RESEND
         resend_token: env::var("RESEND_TOKEN").unwrap(),

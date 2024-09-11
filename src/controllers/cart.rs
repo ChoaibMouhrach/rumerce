@@ -78,7 +78,11 @@ pub async fn add_item(
         return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
     }
 
-    ().into_response()
+    ([(
+        header::SET_COOKIE,
+        format!("{}={}", "cart_id", cart.cart.id.to_string()),
+    )])
+    .into_response()
 }
 
 pub async fn list_items(
