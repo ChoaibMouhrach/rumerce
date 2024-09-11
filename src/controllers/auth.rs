@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use axum::{
     extract::{Query, State},
-    http::StatusCode,
+    http::{header, StatusCode},
     response::IntoResponse,
     Extension, Json,
 };
@@ -17,7 +17,7 @@ use uuid::Uuid;
 use crate::{
     models::{role::Role, session::PopulatedSession, user::User},
     services,
-    utils::constants::ROLES,
+    utils::constants::{ROLES, SESSION_COOKIE_NAME},
     validations::{
         auth::{SignInSchema, SignInTokenSchema, StoreSessionSchema},
         user::StoreUserSchema,
@@ -190,7 +190,17 @@ pub async fn auth(
         }
     };
 
-    (Json(session.session)).into_response()
+    (
+        [(
+            header::SET_COOKIE,
+            format!(
+                "{}={}; Path=/; HttpOnly; Secure; SameSite=Strict",
+                SESSION_COOKIE_NAME, session.session
+            ),
+        )],
+        Json(session.session),
+    )
+        .into_response()
 }
 
 pub async fn sign_out(
@@ -210,7 +220,14 @@ pub async fn sign_out(
         return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
     }
 
-    ().into_response()
+    ([(
+        header::SET_COOKIE,
+        format!(
+            "{}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT",
+            SESSION_COOKIE_NAME
+        ),
+    )])
+    .into_response()
 }
 
 #[derive(Serialize)]
