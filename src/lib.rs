@@ -25,8 +25,6 @@ pub struct State {
 pub type AppState = Arc<State>;
 
 pub fn create_app(state: State) -> Router {
-    tracing_subscriber::fmt::init();
-
     let state = Arc::new(state);
 
     let guest_router = guest::init(state.clone());

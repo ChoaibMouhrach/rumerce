@@ -7,6 +7,8 @@ use rumerce::{
 
 #[tokio::main]
 async fn main() {
+    tracing_subscriber::fmt::init();
+
     let env = env::init();
     let db = db::init(&env.database_url).await;
     let mailer = Box::new(Mailer {

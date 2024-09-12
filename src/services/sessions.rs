@@ -47,6 +47,26 @@ pub async fn find_by_session(
     ).fetch_optional(db).await
 }
 
+pub async fn find_by_user_id(
+    user_id: &Uuid,
+    db: &mut PgConnection,
+) -> Result<Option<PopulatedSession>, sqlx::Error> {
+    sqlx::query_as!(
+        PopulatedSession,
+        r#"
+            SELECT 
+                (sessions.id, sessions.session, sessions.user_id, sessions.created_at) as "session!: Session" ,
+                (users.id, users.name, users.email, users.role_id, users.created_at) as "user!: User",
+                (roles.id, roles.name, roles.created_at) as "role!: Role"
+            FROM sessions
+            JOIN users ON users.id = sessions.user_id
+            JOIN roles ON users.role_id = roles.id
+            WHERE sessions.user_id = $1
+        "#,
+        user_id
+    ).fetch_optional(db).await
+}
+
 pub async fn insert(
     input: StoreSessionSchema,
     db: &mut PgConnection,
