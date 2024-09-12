@@ -125,7 +125,7 @@ pub async fn sign_in(
     )
     .with_html(&format!(r#"<a href="{}" >Sign In</a>"#, url));
 
-    if let Err(err) = state.resend.emails.send(email).await {
+    if let Err(err) = state.mailer.mail(email).await {
         error!("{err}");
         return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
     }
