@@ -21,13 +21,14 @@ use crate::{
         auth::{SignInSchema, StoreSessionSchema},
         magic_tokens::StoreMagicTokenSchema,
         user::StoreUserSchema,
+        ValidatedForm,
     },
     AppState,
 };
 
 pub async fn sign_in(
     State(state): State<AppState>,
-    Json(input): Json<SignInSchema>,
+    ValidatedForm(input): ValidatedForm<SignInSchema>,
 ) -> impl IntoResponse {
     let mut connection = match state.db.acquire().await {
         Ok(connection) => connection,

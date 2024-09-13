@@ -1,16 +1,12 @@
 use serde::Deserialize;
 use uuid::Uuid;
+use validator::Validate;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Validate)]
 pub struct StoreUserSchema {
+    #[validate(length(min = 1))]
     pub name: Option<String>,
-    pub email: String,
-    pub role_id: Uuid,
-}
-
-#[derive(Deserialize)]
-pub struct UpdateUserSchema {
-    pub name: Option<String>,
+    #[validate(email)]
     pub email: String,
     pub role_id: Uuid,
 }

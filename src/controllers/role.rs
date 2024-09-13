@@ -1,8 +1,4 @@
-use crate::{
-    services,
-    validations::role::{StoreRoleSchema, UpdateRoleSchema},
-    AppState,
-};
+use crate::{services, validations::role::StoreRoleSchema, AppState};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -78,7 +74,7 @@ pub async fn store(
 pub async fn update(
     Path(id): Path<Uuid>,
     State(state): State<AppState>,
-    Json(input): Json<UpdateRoleSchema>,
+    Json(input): Json<StoreRoleSchema>,
 ) -> impl IntoResponse {
     let mut connection = match state.db.acquire().await {
         Ok(connection) => connection,

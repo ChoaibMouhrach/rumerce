@@ -1,7 +1,4 @@
-use crate::{
-    models::unit::Unit,
-    validations::unit::{StoreUnitSchema, UpdateUnitSchema},
-};
+use crate::{models::unit::Unit, validations::unit::StoreUnitSchema};
 use sqlx::{postgres::PgQueryResult, PgConnection};
 use uuid::Uuid;
 
@@ -28,7 +25,7 @@ pub async fn insert(
 
 pub async fn update(
     id: &Uuid,
-    input: &UpdateUnitSchema,
+    input: &StoreUnitSchema,
     db: &mut PgConnection,
 ) -> Result<PgQueryResult, sqlx::Error> {
     sqlx::query!("UPDATE units SET name = $1 WHERE id = $2", input.name, id)

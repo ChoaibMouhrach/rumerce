@@ -1,11 +1,8 @@
 use serde::Deserialize;
+use validator::Validate;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Validate)]
 pub struct StoreCategorySchema {
-    pub name: String,
-}
-
-#[derive(Deserialize)]
-pub struct UpdateCategorySchema {
+    #[validate(length(min = 1))]
     pub name: String,
 }

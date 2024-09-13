@@ -1,7 +1,4 @@
-use crate::{
-    models::category::Category,
-    validations::category::{StoreCategorySchema, UpdateCategorySchema},
-};
+use crate::{models::category::Category, validations::category::StoreCategorySchema};
 use sqlx::{postgres::PgQueryResult, PgConnection};
 use uuid::Uuid;
 
@@ -28,7 +25,7 @@ pub async fn insert(
 
 pub async fn update(
     id: &Uuid,
-    input: &UpdateCategorySchema,
+    input: &StoreCategorySchema,
     db: &mut PgConnection,
 ) -> Result<PgQueryResult, sqlx::Error> {
     sqlx::query!(

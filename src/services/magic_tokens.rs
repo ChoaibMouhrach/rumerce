@@ -9,6 +9,20 @@ use crate::{
     validations::magic_tokens::StoreMagicTokenSchema,
 };
 
+pub async fn all(connection: &mut PgConnection) -> Result<Vec<PopulatedMagicToken>, sqlx::Error> {
+    sqlx::query_as!(
+        PopulatedMagicToken,
+        r#"
+      SELECT 
+        (users.id, users.name, users.email, users.role_id, users.created_at) as "user!: User",
+        (magic_tokens.id, magic_tokens.token, magic_tokens.user_id, magic_tokens.expires_at) as "token!: MagicToken"
+      FROM
+        magic_tokens
+      JOIN users ON users.id = magic_tokens.user_id
+    "#
+    ).fetch_all(connection).await
+}
+
 pub async fn find(
     id: &Uuid,
     connection: &mut PgConnection,

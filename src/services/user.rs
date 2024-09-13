@@ -6,7 +6,7 @@ use crate::{
         role::Role,
         user::{PopulatedUser, User},
     },
-    validations::user::{StoreUserSchema, UpdateUserSchema},
+    validations::user::StoreUserSchema,
 };
 
 pub async fn all(db: &mut PgConnection) -> Result<Vec<PopulatedUser>, sqlx::Error> {
@@ -87,7 +87,7 @@ pub async fn insert(
 
 pub async fn update(
     id: &Uuid,
-    input: &UpdateUserSchema,
+    input: &StoreUserSchema,
     db: &mut PgConnection,
 ) -> Result<PgQueryResult, sqlx::Error> {
     sqlx::query!(

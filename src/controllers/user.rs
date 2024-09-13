@@ -7,11 +7,7 @@ use axum::{
 use log::error;
 use uuid::Uuid;
 
-use crate::{
-    services,
-    validations::user::{StoreUserSchema, UpdateUserSchema},
-    AppState,
-};
+use crate::{services, validations::user::StoreUserSchema, AppState};
 
 pub async fn index(State(state): State<AppState>) -> impl IntoResponse {
     let mut connection = match state.db.acquire().await {
@@ -79,7 +75,7 @@ pub async fn store(
 pub async fn update(
     Path(id): Path<Uuid>,
     State(state): State<AppState>,
-    Json(input): Json<UpdateUserSchema>,
+    Json(input): Json<StoreUserSchema>,
 ) -> impl IntoResponse {
     let mut connection = match state.db.acquire().await {
         Ok(connection) => connection,

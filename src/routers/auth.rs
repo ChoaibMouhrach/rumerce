@@ -24,14 +24,14 @@ async fn auth_middleware(
     let cookies = match headers.get(header::COOKIE) {
         Some(cookies) => cookies,
         None => {
-            return (StatusCode::BAD_REQUEST, Json("Missing session")).into_response();
+            return (StatusCode::UNAUTHORIZED, Json("Missing session")).into_response();
         }
     };
 
     let cookies = match cookies.to_str() {
         Ok(cookies) => cookies,
         Err(_) => {
-            return (StatusCode::BAD_REQUEST, Json("Invalid cookies")).into_response();
+            return (StatusCode::UNAUTHORIZED, Json("Invalid cookies")).into_response();
         }
     };
 
@@ -42,7 +42,7 @@ async fn auth_middleware(
         let cookie = match Cookie::parse(cookie) {
             Ok(cookie) => cookie,
             Err(_) => {
-                return (StatusCode::BAD_REQUEST, "Invalid cookies").into_response();
+                return (StatusCode::UNAUTHORIZED, "Invalid cookies").into_response();
             }
         };
 
@@ -55,14 +55,14 @@ async fn auth_middleware(
     let session_cookie = match target_cookie {
         Some(target_cookie) => target_cookie,
         None => {
-            return (StatusCode::BAD_REQUEST, Json("Session not found")).into_response();
+            return (StatusCode::UNAUTHORIZED, Json("Session not found")).into_response();
         }
     };
 
     let session = match Uuid::parse_str(session_cookie.value()) {
         Ok(session) => session,
         Err(_) => {
-            return (StatusCode::BAD_REQUEST, Json("Invalid session")).into_response();
+            return (StatusCode::UNAUTHORIZED, Json("Invalid session")).into_response();
         }
     };
 

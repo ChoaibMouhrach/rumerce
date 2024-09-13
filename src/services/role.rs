@@ -1,7 +1,4 @@
-use crate::{
-    models::role::Role,
-    validations::role::{StoreRoleSchema, UpdateRoleSchema},
-};
+use crate::{models::role::Role, validations::role::StoreRoleSchema};
 use sqlx::{postgres::PgQueryResult, PgConnection};
 use uuid::Uuid;
 
@@ -34,7 +31,7 @@ pub async fn insert(
 
 pub async fn update(
     id: &Uuid,
-    input: &UpdateRoleSchema,
+    input: &StoreRoleSchema,
     db: &mut PgConnection,
 ) -> Result<PgQueryResult, sqlx::Error> {
     sqlx::query!("UPDATE roles SET name = $1 WHERE id = $2", input.name, id)

@@ -1,11 +1,8 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+use validator::Validate;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize, Validate)]
 pub struct StoreRoleSchema {
-    pub name: String,
-}
-
-#[derive(Deserialize)]
-pub struct UpdateRoleSchema {
+    #[validate(length(min = 1))]
     pub name: String,
 }
