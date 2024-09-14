@@ -532,3 +532,28 @@ pub async fn profile_success() {
 
     assert_eq!(value["user"]["email"], email);
 }
+
+#[tokio::test]
+pub async fn profile_unauth() {
+    let container = Postgres::default()
+        .with_tag("latest")
+        .start()
+        .await
+        .unwrap();
+
+    let (app, _) = init(&container).await;
+
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                .uri("/profile")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), 401);
+}

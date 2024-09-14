@@ -14,13 +14,26 @@ pub async fn find(id: &Uuid, db: &mut PgConnection) -> Result<Option<Category>, 
         .await
 }
 
+pub async fn find_by_name(
+    name: &str,
+    db: &mut PgConnection,
+) -> Result<Option<Category>, sqlx::Error> {
+    sqlx::query_as!(Category, "SELECT * FROM categories WHERE name = $1", name)
+        .fetch_optional(&mut *db)
+        .await
+}
+
 pub async fn insert(
     input: &StoreCategorySchema,
     db: &mut PgConnection,
-) -> Result<PgQueryResult, sqlx::Error> {
-    sqlx::query!("INSERT INTO categories(name) VALUES ($1)", input.name)
-        .execute(&mut *db)
-        .await
+) -> Result<Category, sqlx::Error> {
+    sqlx::query_as!(
+        Category,
+        r#"INSERT INTO categories(name) VALUES ($1) RETURNING *"#,
+        input.name
+    )
+    .fetch_one(&mut *db)
+    .await
 }
 
 pub async fn update(
