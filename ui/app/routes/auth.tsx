@@ -1,4 +1,4 @@
-import { LoaderFunction } from "@remix-run/node";
+import { LoaderFunction, redirect } from "@remix-run/node";
 import { env } from "~/env";
 
 export const loader: LoaderFunction = async ({ request }) => {
@@ -27,7 +27,7 @@ export const loader: LoaderFunction = async ({ request }) => {
     });
   }
 
-  return new Response("", {
+  return redirect("/", {
     headers: {
       "set-cookie": cookie,
     },

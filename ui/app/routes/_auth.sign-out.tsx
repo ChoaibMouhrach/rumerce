@@ -1,14 +1,37 @@
-import { useLoaderData, useNavigate } from "@remix-run/react";
+import { LoaderFunctionArgs } from "@remix-run/node";
+import { redirect, useLoaderData, useNavigate } from "@remix-run/react";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "~/components/ui/button";
 import { env } from "~/env";
 
-export const loader = () => ({
-  ENV: {
-    API_URL: env.API_URL,
-  },
-});
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const cookie = request.headers.get("cookie");
+
+  if (!cookie) {
+    throw redirect("/sign-in");
+  }
+
+  const url = new URL(env.API_URL);
+  url.pathname = "/profile";
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      cookie,
+    },
+  });
+
+  if (!response.ok) {
+    throw redirect("/sign-in");
+  }
+
+  return {
+    ENV: {
+      API_URL: env.API_URL,
+    },
+  };
+};
 
 const Page = () => {
   const { ENV } = useLoaderData<typeof loader>();

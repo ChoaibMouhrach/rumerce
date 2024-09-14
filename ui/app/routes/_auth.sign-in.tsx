@@ -13,9 +13,16 @@ import { Button } from "~/components/ui/button";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { env } from "~/env";
-import { useLoaderData } from "@remix-run/react";
+import { redirect, useLoaderData } from "@remix-run/react";
+import { LoaderFunctionArgs } from "@remix-run/node";
 
-export const loader = async () => {
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const cookie = request.headers.get("cookie");
+
+  if (cookie) {
+    throw redirect("/");
+  }
+
   return {
     ENV: {
       API_URL: env.API_URL,
