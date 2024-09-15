@@ -11,6 +11,7 @@ import {
   Search,
   Settings,
   Shapes,
+  Warehouse,
 } from "lucide-react";
 import React, { useMemo } from "react";
 import { Button } from "~/components/ui/button";
@@ -42,6 +43,11 @@ const links = [
     name: "Units",
     to: "/units",
     icon: Scale,
+  },
+  {
+    name: "Warehouses",
+    to: "/warehouses",
+    icon: Warehouse,
   },
   {
     name: "Settings",
