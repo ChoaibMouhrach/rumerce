@@ -6,28 +6,27 @@ import {
   FormItem,
   FormMessage,
 } from "~/components/ui/form";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { useMutation } from "@tanstack/react-query";
+import { auth } from "~/services/auth";
 import { toast } from "sonner";
-import { env } from "~/env";
-import { redirect, useLoaderData } from "@remix-run/react";
-import { LoaderFunctionArgs } from "@remix-run/node";
+import { LoaderFunction, redirect } from "@remix-run/node";
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const cookie = request.headers.get("cookie");
+export const loader: LoaderFunction = async ({ request }) => {
+  const cookies = request.headers.get("cookie");
 
-  if (cookie) {
-    throw redirect("/");
+  if (!cookies) {
+    return {};
   }
 
-  return {
-    ENV: {
-      API_URL: env.API_URL,
-    },
-  };
+  if (!cookies.includes("session=")) {
+    return {};
+  }
+
+  return redirect("/");
 };
 
 const schema = z.object({
@@ -37,33 +36,21 @@ const schema = z.object({
 type Payload = z.infer<typeof schema>;
 
 const Page = () => {
-  const data = useLoaderData<typeof loader>();
-
-  const { mutate, isPending } = useMutation({
-    mutationFn: async (payload: Payload) => {
-      const url = new URL(data.ENV.API_URL);
-      url.pathname = "/sign-in";
-
-      await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-    },
-    onSuccess: () => {
-      toast.success("Check you inbox");
-    },
-    onError: () => {
-      toast.error("Something went wrong");
-    },
-  });
-
   const form = useForm<Payload>({
     resolver: zodResolver(schema),
     values: {
       email: "",
+    },
+  });
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: (payload: Payload) => auth.signIn(payload.email),
+    onSuccess: () => {
+      toast.success("Check your inbox");
+      form.reset();
+    },
+    onError: () => {
+      toast.error("Something went wrong");
     },
   });
 
@@ -89,7 +76,7 @@ const Page = () => {
           )}
         />
 
-        <Button type="submit" isPending={isPending}>
+        <Button isPending={isPending} type="submit">
           Sign In
         </Button>
       </form>

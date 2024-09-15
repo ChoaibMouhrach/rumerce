@@ -1,18 +1,7 @@
-import type { MetaFunction } from "@remix-run/node";
-import { Link } from "@remix-run/react";
-import { Button } from "~/components/ui/button";
+import { redirect } from "@remix-run/react";
 
-export const meta: MetaFunction = () => {
-  return [
-    { title: "New Remix App" },
-    { name: "description", content: "Welcome to Remix!" },
-  ];
-};
+export const loader = () => redirect("/dashboard");
 
-export default function Index() {
-  return (
-    <Button asChild>
-      <Link to="/sign-in">Sign In</Link>
-    </Button>
-  );
-}
+const Page = () => <div>Loading...</div>;
+
+export default Page;
