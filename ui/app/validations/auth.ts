@@ -12,3 +12,5 @@ export const roleSchema = z.object({
   name: z.string().min(1),
   created_at: z.string().transform(Date),
 });
+
+export type Role = z.infer<typeof roleSchema>;
