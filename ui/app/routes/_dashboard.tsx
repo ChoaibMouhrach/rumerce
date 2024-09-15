@@ -7,6 +7,7 @@ import {
   LucideIcon,
   Menu,
   Package2,
+  Scale,
   Search,
   Settings,
   Shapes,
@@ -36,6 +37,11 @@ const links = [
     name: "Categories",
     to: "/categories",
     icon: Shapes,
+  },
+  {
+    name: "Units",
+    to: "/units",
+    icon: Scale,
   },
   {
     name: "Settings",
