@@ -64,6 +64,17 @@ pub async fn store(
         }
     };
 
+    let warehouse = services::warehouse::find_by_name(&input.name, &mut connection).await;
+
+    if let Err(err) = warehouse {
+        error!("{err}");
+        return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+    }
+
+    if let Ok(Some(_)) = warehouse {
+        return (StatusCode::FORBIDDEN).into_response();
+    }
+
     if let Err(err) = services::warehouse::insert(&input, &mut connection).await {
         error!("{err}");
         return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
@@ -84,6 +95,30 @@ pub async fn update(
             return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
         }
     };
+
+    let warehouse = match services::warehouse::find_by_name(&input.name, &mut connection).await {
+        Ok(Some(warehouse)) => warehouse,
+        Ok(None) => {
+            return (StatusCode::NOT_FOUND).into_response();
+        }
+        Err(err) => {
+            error!("{err}");
+            return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+        }
+    };
+
+    let new_warehouse = services::warehouse::find_by_name(&input.name, &mut connection).await;
+
+    if let Err(err) = new_warehouse {
+        error!("{err}");
+        return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+    }
+
+    if let Ok(Some(new_warehouse)) = new_warehouse {
+        if warehouse.id != new_warehouse.id {
+            return (StatusCode::FORBIDDEN).into_response();
+        }
+    }
 
     if let Err(err) = services::warehouse::update(&id, &input, &mut connection).await {
         error!("{err}");

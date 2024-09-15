@@ -107,18 +107,18 @@ pub async fn update(
         }
     };
 
-    match services::category::find_by_name(&input.name, &mut connection).await {
-        Ok(Some(new_category)) => {
-            if new_category.id != category.id {
-                return (StatusCode::FORBIDDEN, Json("Name taken")).into_response();
-            }
+    let new_category = services::category::find_by_name(&input.name, &mut connection).await;
+
+    if let Err(err) = new_category {
+        error!("{err}");
+        return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+    }
+
+    if let Ok(Some(new_category)) = new_category {
+        if new_category.id != category.id {
+            return (StatusCode::FORBIDDEN, Json("Name taken")).into_response();
         }
-        Ok(None) => {}
-        Err(err) => {
-            error!("{err}");
-            return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
-        }
-    };
+    }
 
     if let Err(err) = services::category::update(&category.id, &input, &mut connection).await {
         error!("{err}");

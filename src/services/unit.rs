@@ -14,6 +14,12 @@ pub async fn find(id: &Uuid, db: &mut PgConnection) -> Result<Option<Unit>, sqlx
         .await
 }
 
+pub async fn find_by_name(name: &str, db: &mut PgConnection) -> Result<Option<Unit>, sqlx::Error> {
+    sqlx::query_as!(Unit, "SELECT * FROM units WHERE name = $1", name)
+        .fetch_optional(&mut *db)
+        .await
+}
+
 pub async fn insert(
     input: &StoreUnitSchema,
     db: &mut PgConnection,

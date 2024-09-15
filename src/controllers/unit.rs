@@ -63,6 +63,17 @@ pub async fn store(
         }
     };
 
+    let new_unit = services::unit::find_by_name(&input.name, &mut connection).await;
+
+    if let Err(err) = new_unit {
+        error!("{err}");
+        return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+    }
+
+    if let Ok(Some(_)) = new_unit {
+        return (StatusCode::FORBIDDEN).into_response();
+    }
+
     if let Err(err) = services::unit::insert(&input, &mut connection).await {
         error!("{err}");
         return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
@@ -83,6 +94,30 @@ pub async fn update(
             return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
         }
     };
+
+    let unit = match services::unit::find(&id, &mut connection).await {
+        Ok(Some(unit)) => unit,
+        Ok(None) => {
+            return (StatusCode::NOT_FOUND).into_response();
+        }
+        Err(err) => {
+            error!("{err}");
+            return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+        }
+    };
+
+    let new_unit = services::unit::find_by_name(&unit.name, &mut connection).await;
+
+    if let Err(err) = new_unit {
+        error!("{err}");
+        return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+    }
+
+    if let Ok(Some(new_unit)) = new_unit {
+        if new_unit.id != unit.id {
+            return (StatusCode::FORBIDDEN).into_response();
+        }
+    }
 
     if let Err(err) = services::unit::update(&id, &input, &mut connection).await {
         error!("{err}");

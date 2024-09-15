@@ -15,6 +15,15 @@ pub async fn find(id: &Uuid, db: &mut PgConnection) -> Result<Option<Warehouse>,
         .await
 }
 
+pub async fn find_by_name(
+    name: &str,
+    db: &mut PgConnection,
+) -> Result<Option<Warehouse>, sqlx::Error> {
+    sqlx::query_as!(Warehouse, "SELECT * FROM warehouses WHERE name = $1", name)
+        .fetch_optional(&mut *db)
+        .await
+}
+
 pub async fn insert(
     input: &StoreWarehouseSchema,
     db: &mut PgConnection,
