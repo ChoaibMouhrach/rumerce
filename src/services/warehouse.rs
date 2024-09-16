@@ -27,10 +27,14 @@ pub async fn find_by_name(
 pub async fn insert(
     input: &StoreWarehouseSchema,
     db: &mut PgConnection,
-) -> Result<PgQueryResult, sqlx::Error> {
-    sqlx::query!("INSERT INTO warehouses(name) VALUES ($1)", input.name)
-        .execute(&mut *db)
-        .await
+) -> Result<Warehouse, sqlx::Error> {
+    sqlx::query_as!(
+        Warehouse,
+        "INSERT INTO warehouses(name) VALUES ($1) RETURNING *",
+        input.name
+    )
+    .fetch_one(&mut *db)
+    .await
 }
 
 pub async fn update(

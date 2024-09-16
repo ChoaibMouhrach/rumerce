@@ -96,7 +96,7 @@ pub async fn update(
         }
     };
 
-    let warehouse = match services::warehouse::find_by_name(&input.name, &mut connection).await {
+    let warehouse = match services::warehouse::find(&id, &mut connection).await {
         Ok(Some(warehouse)) => warehouse,
         Ok(None) => {
             return (StatusCode::NOT_FOUND).into_response();
@@ -115,7 +115,7 @@ pub async fn update(
     }
 
     if let Ok(Some(new_warehouse)) = new_warehouse {
-        if warehouse.id != new_warehouse.id {
+        if new_warehouse.id != warehouse.id {
             return (StatusCode::FORBIDDEN).into_response();
         }
     }
