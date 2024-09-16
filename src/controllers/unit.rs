@@ -106,7 +106,7 @@ pub async fn update(
         }
     };
 
-    let new_unit = services::unit::find_by_name(&unit.name, &mut connection).await;
+    let new_unit = services::unit::find_by_name(&input.name, &mut connection).await;
 
     if let Err(err) = new_unit {
         error!("{err}");
@@ -124,7 +124,7 @@ pub async fn update(
         return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
     };
 
-    ().into_response()
+    (StatusCode::NO_CONTENT).into_response()
 }
 
 pub async fn destroy(Path(id): Path<Uuid>, State(state): State<AppState>) -> impl IntoResponse {
@@ -141,5 +141,5 @@ pub async fn destroy(Path(id): Path<Uuid>, State(state): State<AppState>) -> imp
         return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
     };
 
-    ().into_response()
+    (StatusCode::NO_CONTENT).into_response()
 }

@@ -90,7 +90,7 @@ pub async fn update(
         return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
     }
 
-    ().into_response()
+    (StatusCode::NO_CONTENT).into_response()
 }
 
 pub async fn destroy(Path(id): Path<Uuid>, State(state): State<AppState>) -> impl IntoResponse {
@@ -107,5 +107,5 @@ pub async fn destroy(Path(id): Path<Uuid>, State(state): State<AppState>) -> imp
         return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
     }
 
-    ().into_response()
+    (StatusCode::NO_CONTENT).into_response()
 }

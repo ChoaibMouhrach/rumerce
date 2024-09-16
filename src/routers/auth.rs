@@ -92,10 +92,7 @@ async fn auth_middleware(
 pub fn init(state: AppState) -> Router<AppState> {
     let role_router = Router::new()
         .route("/roles", get(role::index))
-        .route("/roles/:id", get(role::show))
-        .route("/roles", post(role::store))
-        .route("/roles/:id", patch(role::update))
-        .route("/roles/:id", delete(role::destroy));
+        .route("/roles/:id", get(role::show));
 
     let user_router = Router::new()
         .route("/users", get(user::index))

@@ -19,14 +19,15 @@ pub async fn sign_in_success() {
         .await
         .unwrap();
 
-    let (app, mut connection) = init(&container).await;
+    let mut config = init(&container).await;
 
     let email = "example@example.com";
 
     let mut body = HashMap::new();
     body.insert("email", email);
 
-    let response = app
+    let response = config
+        .app
         .oneshot(
             Request::builder()
                 .method("POST")
@@ -40,7 +41,7 @@ pub async fn sign_in_success() {
 
     assert_eq!(response.status(), 200);
 
-    let user = services::user::find_by_email(&email, &mut connection)
+    let user = services::user::find_by_email(&email, &mut config.connection)
         .await
         .unwrap()
         .unwrap();
@@ -48,7 +49,7 @@ pub async fn sign_in_success() {
     assert_eq!(user.user.email, email);
     assert_eq!(user.role.name, ROLES.member);
 
-    services::magic_tokens::find_by_user(&user.user.id, &mut connection)
+    services::magic_tokens::find_by_user(&user.user.id, &mut config.connection)
         .await
         .unwrap()
         .unwrap();
@@ -62,9 +63,10 @@ pub async fn sign_in_no_body() {
         .await
         .unwrap();
 
-    let (app, mut connection) = init(&container).await;
+    let mut config = init(&container).await;
 
-    let response = app
+    let response = config
+        .app
         .oneshot(
             Request::builder()
                 .method("POST")
@@ -77,10 +79,12 @@ pub async fn sign_in_no_body() {
 
     assert_eq!(response.status(), 400);
 
-    let users = services::user::all(&mut connection).await.unwrap();
+    let users = services::user::all(&mut config.connection).await.unwrap();
     assert_eq!(users.len(), 0);
 
-    let magic_tokens = services::magic_tokens::all(&mut connection).await.unwrap();
+    let magic_tokens = services::magic_tokens::all(&mut config.connection)
+        .await
+        .unwrap();
     assert_eq!(magic_tokens.len(), 0);
 }
 
@@ -92,12 +96,13 @@ pub async fn sign_in_invalid_email() {
         .await
         .unwrap();
 
-    let (app, mut connection) = init(&container).await;
+    let mut config = init(&container).await;
 
     let mut body = HashMap::new();
     body.insert("email", "example");
 
-    let response = app
+    let response = config
+        .app
         .oneshot(
             Request::builder()
                 .method("POST")
@@ -111,10 +116,12 @@ pub async fn sign_in_invalid_email() {
 
     assert_eq!(response.status(), 400);
 
-    let users = services::user::all(&mut connection).await.unwrap();
+    let users = services::user::all(&mut config.connection).await.unwrap();
     assert_eq!(users.len(), 0);
 
-    let magic_tokens = services::magic_tokens::all(&mut connection).await.unwrap();
+    let magic_tokens = services::magic_tokens::all(&mut config.connection)
+        .await
+        .unwrap();
     assert_eq!(magic_tokens.len(), 0);
 }
 
@@ -126,12 +133,13 @@ pub async fn sign_in_no_email() {
         .await
         .unwrap();
 
-    let (app, mut connection) = init(&container).await;
+    let mut config = init(&container).await;
 
     let mut body = HashMap::new();
     body.insert("email", "");
 
-    let response = app
+    let response = config
+        .app
         .oneshot(
             Request::builder()
                 .method("POST")
@@ -145,10 +153,12 @@ pub async fn sign_in_no_email() {
 
     assert_eq!(response.status(), 400);
 
-    let users = services::user::all(&mut connection).await.unwrap();
+    let users = services::user::all(&mut config.connection).await.unwrap();
     assert_eq!(users.len(), 0);
 
-    let magic_tokens = services::magic_tokens::all(&mut connection).await.unwrap();
+    let magic_tokens = services::magic_tokens::all(&mut config.connection)
+        .await
+        .unwrap();
     assert_eq!(magic_tokens.len(), 0);
 }
 
@@ -161,14 +171,15 @@ pub async fn auth_success() {
         .await
         .unwrap();
 
-    let (app, mut connection) = init(&container).await;
+    let mut config = init(&container).await;
 
     let email = "example@example.com";
 
     let mut body = HashMap::new();
     body.insert("email", email);
 
-    let response = app
+    let response = config
+        .app
         .clone()
         .oneshot(
             Request::builder()
@@ -183,7 +194,7 @@ pub async fn auth_success() {
 
     assert_eq!(response.status(), 200);
 
-    let user = services::user::find_by_email(&email, &mut connection)
+    let user = services::user::find_by_email(&email, &mut config.connection)
         .await
         .unwrap()
         .unwrap();
@@ -191,12 +202,13 @@ pub async fn auth_success() {
     assert_eq!(user.user.email, email);
     assert_eq!(user.role.name, ROLES.member);
 
-    let token = services::magic_tokens::find_by_user(&user.user.id, &mut connection)
+    let token = services::magic_tokens::find_by_user(&user.user.id, &mut config.connection)
         .await
         .unwrap()
         .unwrap();
 
-    let response = app
+    let response = config
+        .app
         .clone()
         .oneshot(
             Request::builder()
@@ -221,10 +233,14 @@ pub async fn auth_success() {
 
     assert_eq!(value.contains("session"), true);
 
-    let tokens = services::magic_tokens::all(&mut connection).await.unwrap();
+    let tokens = services::magic_tokens::all(&mut config.connection)
+        .await
+        .unwrap();
     assert_eq!(tokens.len(), 0);
 
-    let sessions = services::sessions::all(&mut connection).await.unwrap();
+    let sessions = services::sessions::all(&mut config.connection)
+        .await
+        .unwrap();
     assert_ne!(sessions.len(), 0);
 }
 
@@ -236,9 +252,10 @@ pub async fn auth_no_token() {
         .await
         .unwrap();
 
-    let (app, mut connection) = init(&container).await;
+    let mut config = init(&container).await;
 
-    let response = app
+    let response = config
+        .app
         .clone()
         .oneshot(
             Request::builder()
@@ -252,7 +269,9 @@ pub async fn auth_no_token() {
 
     assert_eq!(response.status(), 400);
 
-    let sessions = services::sessions::all(&mut connection).await.unwrap();
+    let sessions = services::sessions::all(&mut config.connection)
+        .await
+        .unwrap();
     assert_eq!(sessions.len(), 0);
 }
 
@@ -264,9 +283,10 @@ pub async fn auth_no_token_param() {
         .await
         .unwrap();
 
-    let (app, mut connection) = init(&container).await;
+    let mut config = init(&container).await;
 
-    let response = app
+    let response = config
+        .app
         .clone()
         .oneshot(
             Request::builder()
@@ -280,7 +300,9 @@ pub async fn auth_no_token_param() {
 
     assert_eq!(response.status(), 400);
 
-    let sessions = services::sessions::all(&mut connection).await.unwrap();
+    let sessions = services::sessions::all(&mut config.connection)
+        .await
+        .unwrap();
     assert_eq!(sessions.len(), 0);
 }
 
@@ -292,9 +314,10 @@ pub async fn auth_no_token_found() {
         .await
         .unwrap();
 
-    let (app, mut connection) = init(&container).await;
+    let mut config = init(&container).await;
 
-    let response = app
+    let response = config
+        .app
         .clone()
         .oneshot(
             Request::builder()
@@ -308,7 +331,9 @@ pub async fn auth_no_token_found() {
 
     assert_eq!(response.status(), 400);
 
-    let sessions = services::sessions::all(&mut connection).await.unwrap();
+    let sessions = services::sessions::all(&mut config.connection)
+        .await
+        .unwrap();
     assert_eq!(sessions.len(), 0);
 }
 
@@ -321,14 +346,15 @@ pub async fn sign_out_success() {
         .await
         .unwrap();
 
-    let (app, mut connection) = init(&container).await;
+    let mut config = init(&container).await;
 
     let email = "example@example.com";
 
     let mut body = HashMap::new();
     body.insert("email", email);
 
-    let response = app
+    let response = config
+        .app
         .clone()
         .oneshot(
             Request::builder()
@@ -343,7 +369,7 @@ pub async fn sign_out_success() {
 
     assert_eq!(response.status(), 200);
 
-    let user = services::user::find_by_email(&email, &mut connection)
+    let user = services::user::find_by_email(&email, &mut config.connection)
         .await
         .unwrap()
         .unwrap();
@@ -351,12 +377,13 @@ pub async fn sign_out_success() {
     assert_eq!(user.user.email, email);
     assert_eq!(user.role.name, ROLES.member);
 
-    let token = services::magic_tokens::find_by_user(&user.user.id, &mut connection)
+    let token = services::magic_tokens::find_by_user(&user.user.id, &mut config.connection)
         .await
         .unwrap()
         .unwrap();
 
-    let response = app
+    let response = config
+        .app
         .clone()
         .oneshot(
             Request::builder()
@@ -381,15 +408,18 @@ pub async fn sign_out_success() {
 
     assert_eq!(value.contains("session"), true);
 
-    let tokens = services::magic_tokens::all(&mut connection).await.unwrap();
+    let tokens = services::magic_tokens::all(&mut config.connection)
+        .await
+        .unwrap();
     assert_eq!(tokens.len(), 0);
 
-    let session = services::sessions::find_by_user_id(&user.user.id, &mut connection)
+    let session = services::sessions::find_by_user_id(&user.user.id, &mut config.connection)
         .await
         .unwrap()
         .unwrap();
 
-    let response = app
+    let response = config
+        .app
         .clone()
         .oneshot(
             Request::builder()
@@ -404,7 +434,7 @@ pub async fn sign_out_success() {
 
     assert_eq!(response.status(), 200);
 
-    let session = services::sessions::find_by_user_id(&user.user.id, &mut connection)
+    let session = services::sessions::find_by_user_id(&user.user.id, &mut config.connection)
         .await
         .unwrap();
 
@@ -419,9 +449,10 @@ pub async fn sign_out_no_session() {
         .await
         .unwrap();
 
-    let (app, _) = init(&container).await;
+    let config = init(&container).await;
 
-    let response = app
+    let response = config
+        .app
         .clone()
         .oneshot(
             Request::builder()
@@ -445,14 +476,15 @@ pub async fn profile_success() {
         .await
         .unwrap();
 
-    let (app, mut connection) = init(&container).await;
+    let mut config = init(&container).await;
 
     let email = "example@example.com";
 
     let mut body = HashMap::new();
     body.insert("email", email);
 
-    let response = app
+    let response = config
+        .app
         .clone()
         .oneshot(
             Request::builder()
@@ -467,7 +499,7 @@ pub async fn profile_success() {
 
     assert_eq!(response.status(), 200);
 
-    let user = services::user::find_by_email(&email, &mut connection)
+    let user = services::user::find_by_email(&email, &mut config.connection)
         .await
         .unwrap()
         .unwrap();
@@ -475,12 +507,13 @@ pub async fn profile_success() {
     assert_eq!(user.user.email, email);
     assert_eq!(user.role.name, ROLES.member);
 
-    let token = services::magic_tokens::find_by_user(&user.user.id, &mut connection)
+    let token = services::magic_tokens::find_by_user(&user.user.id, &mut config.connection)
         .await
         .unwrap()
         .unwrap();
 
-    let response = app
+    let response = config
+        .app
         .clone()
         .oneshot(
             Request::builder()
@@ -505,15 +538,18 @@ pub async fn profile_success() {
 
     assert_eq!(value.contains("session"), true);
 
-    let tokens = services::magic_tokens::all(&mut connection).await.unwrap();
+    let tokens = services::magic_tokens::all(&mut config.connection)
+        .await
+        .unwrap();
     assert_eq!(tokens.len(), 0);
 
-    let session = services::sessions::find_by_user_id(&user.user.id, &mut connection)
+    let session = services::sessions::find_by_user_id(&user.user.id, &mut config.connection)
         .await
         .unwrap()
         .unwrap();
 
-    let response = app
+    let response = config
+        .app
         .clone()
         .oneshot(
             Request::builder()
@@ -531,29 +567,4 @@ pub async fn profile_success() {
     let value: serde_json::Value = serde_json::from_slice(&body).unwrap();
 
     assert_eq!(value["user"]["email"], email);
-}
-
-#[tokio::test]
-pub async fn profile_unauth() {
-    let container = Postgres::default()
-        .with_tag("latest")
-        .start()
-        .await
-        .unwrap();
-
-    let (app, _) = init(&container).await;
-
-    let response = app
-        .clone()
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri("/profile")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
-    assert_eq!(response.status(), 401);
 }

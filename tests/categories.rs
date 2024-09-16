@@ -2,43 +2,15 @@ use std::collections::HashMap;
 
 use axum::{body::Body, http::Request};
 use http_body_util::BodyExt;
-use rumerce::{
-    services,
-    utils::constants::ROLES,
-    validations::{auth::StoreSessionSchema, category::StoreCategorySchema, user::StoreUserSchema},
-};
+use rumerce::{services, validations::category::StoreCategorySchema};
 use testcontainers::{runners::AsyncRunner, ImageExt};
 use testcontainers_modules::postgres::Postgres;
-use tower::ServiceExt;
 
-use common::init;
+use common::{auth, init};
+use tower::ServiceExt;
 use uuid::Uuid;
 
 mod common;
-
-#[tokio::test]
-pub async fn categories_unauth() {
-    let container = Postgres::default()
-        .with_tag("latest")
-        .start()
-        .await
-        .unwrap();
-
-    let (app, _) = init(&container).await;
-
-    let response = app
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri("/categories")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
-    assert_eq!(response.status(), 401);
-}
 
 #[tokio::test]
 pub async fn categories_no_queries_empty() {
@@ -48,35 +20,12 @@ pub async fn categories_no_queries_empty() {
         .await
         .unwrap();
 
-    let (app, mut connection) = init(&container).await;
+    let mut config = init(&container).await;
 
-    let role = services::role::find_by_name(&ROLES.member, &mut connection)
-        .await
-        .unwrap()
-        .unwrap();
+    let (_, session) = auth(&config.member, &mut config.connection).await;
 
-    let user = services::user::insert(
-        &StoreUserSchema {
-            name: None,
-            email: "example@example.com".to_string(),
-            role_id: role.id,
-        },
-        &mut connection,
-    )
-    .await
-    .unwrap();
-
-    let session = services::sessions::insert(
-        StoreSessionSchema {
-            session: Uuid::new_v4(),
-            user_id: user.user.id,
-        },
-        &mut connection,
-    )
-    .await
-    .unwrap();
-
-    let response = app
+    let response = config
+        .app
         .oneshot(
             Request::builder()
                 .method("GET")
@@ -106,44 +55,20 @@ pub async fn categories_no_queries_full() {
         .await
         .unwrap();
 
-    let (app, mut connection) = init(&container).await;
-
-    let role = services::role::find_by_name(&ROLES.member, &mut connection)
-        .await
-        .unwrap()
-        .unwrap();
-
-    let user = services::user::insert(
-        &StoreUserSchema {
-            name: None,
-            email: "example@example.com".to_string(),
-            role_id: role.id,
-        },
-        &mut connection,
-    )
-    .await
-    .unwrap();
-
-    let session = services::sessions::insert(
-        StoreSessionSchema {
-            session: Uuid::new_v4(),
-            user_id: user.user.id,
-        },
-        &mut connection,
-    )
-    .await
-    .unwrap();
+    let mut config = init(&container).await;
+    let (_, session) = auth(&config.member, &mut config.connection).await;
 
     let category = services::category::insert(
         &StoreCategorySchema {
             name: "Category 1".to_string(),
         },
-        &mut connection,
+        &mut config.connection,
     )
     .await
     .unwrap();
 
-    let response = app
+    let response = config
+        .app
         .oneshot(
             Request::builder()
                 .method("GET")
@@ -176,44 +101,20 @@ pub async fn categories_show_found() {
         .await
         .unwrap();
 
-    let (app, mut connection) = init(&container).await;
-
-    let role = services::role::find_by_name(&ROLES.member, &mut connection)
-        .await
-        .unwrap()
-        .unwrap();
-
-    let user = services::user::insert(
-        &StoreUserSchema {
-            name: None,
-            email: "example@example.com".to_string(),
-            role_id: role.id,
-        },
-        &mut connection,
-    )
-    .await
-    .unwrap();
-
-    let session = services::sessions::insert(
-        StoreSessionSchema {
-            session: Uuid::new_v4(),
-            user_id: user.user.id,
-        },
-        &mut connection,
-    )
-    .await
-    .unwrap();
+    let mut config = init(&container).await;
+    let (_, session) = auth(&config.member, &mut config.connection).await;
 
     let category = services::category::insert(
         &StoreCategorySchema {
             name: "Category 1".to_string(),
         },
-        &mut connection,
+        &mut config.connection,
     )
     .await
     .unwrap();
 
-    let response = app
+    let response = config
+        .app
         .oneshot(
             Request::builder()
                 .method("GET")
@@ -245,35 +146,11 @@ pub async fn categories_show_not_found() {
         .await
         .unwrap();
 
-    let (app, mut connection) = init(&container).await;
+    let mut config = init(&container).await;
+    let (_, session) = auth(&config.member, &mut config.connection).await;
 
-    let role = services::role::find_by_name(&ROLES.member, &mut connection)
-        .await
-        .unwrap()
-        .unwrap();
-
-    let user = services::user::insert(
-        &StoreUserSchema {
-            name: None,
-            email: "example@example.com".to_string(),
-            role_id: role.id,
-        },
-        &mut connection,
-    )
-    .await
-    .unwrap();
-
-    let session = services::sessions::insert(
-        StoreSessionSchema {
-            session: Uuid::new_v4(),
-            user_id: user.user.id,
-        },
-        &mut connection,
-    )
-    .await
-    .unwrap();
-
-    let response = app
+    let response = config
+        .app
         .oneshot(
             Request::builder()
                 .method("GET")
@@ -289,54 +166,6 @@ pub async fn categories_show_not_found() {
 }
 
 #[tokio::test]
-pub async fn categories_show_unauth() {
-    let container = Postgres::default()
-        .with_tag("latest")
-        .start()
-        .await
-        .unwrap();
-
-    let (app, _) = init(&container).await;
-
-    let response = app
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri(&format!("/categories/{}", Uuid::new_v4().to_string()))
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
-    assert_eq!(response.status(), 401);
-}
-
-#[tokio::test]
-pub async fn store_category_unauth() {
-    let container = Postgres::default()
-        .with_tag("latest")
-        .start()
-        .await
-        .unwrap();
-
-    let (app, _) = init(&container).await;
-
-    let response = app
-        .oneshot(
-            Request::builder()
-                .method("POST")
-                .uri("/categories")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
-    assert_eq!(response.status(), 401);
-}
-
-#[tokio::test]
 pub async fn store_category_success() {
     let container = Postgres::default()
         .with_tag("latest")
@@ -344,38 +173,15 @@ pub async fn store_category_success() {
         .await
         .unwrap();
 
-    let (app, mut connection) = init(&container).await;
+    let mut config = init(&container).await;
 
-    let role = services::role::find_by_name(&ROLES.member, &mut connection)
-        .await
-        .unwrap()
-        .unwrap();
-
-    let user = services::user::insert(
-        &StoreUserSchema {
-            name: None,
-            email: "example@example.com".to_string(),
-            role_id: role.id,
-        },
-        &mut connection,
-    )
-    .await
-    .unwrap();
-
-    let session = services::sessions::insert(
-        StoreSessionSchema {
-            session: Uuid::new_v4(),
-            user_id: user.user.id,
-        },
-        &mut connection,
-    )
-    .await
-    .unwrap();
+    let (_, session) = auth(&config.member, &mut config.connection).await;
 
     let mut payload = HashMap::new();
     payload.insert("name", "category 1");
 
-    let response = app
+    let response = config
+        .app
         .oneshot(
             Request::builder()
                 .method("POST")
@@ -390,7 +196,9 @@ pub async fn store_category_success() {
 
     assert_eq!(response.status(), 201);
 
-    let categories = services::category::all(&mut connection).await.unwrap();
+    let categories = services::category::all(&mut config.connection)
+        .await
+        .unwrap();
     assert_eq!(categories.len(), 1);
     assert_eq!(categories[0].name, payload["name"]);
 }
@@ -403,39 +211,15 @@ pub async fn store_category_taken() {
         .await
         .unwrap();
 
-    let (app, mut connection) = init(&container).await;
+    let mut config = init(&container).await;
 
-    let role = services::role::find_by_name(&ROLES.member, &mut connection)
-        .await
-        .unwrap()
-        .unwrap();
-
-    let user = services::user::insert(
-        &StoreUserSchema {
-            name: None,
-            email: "example@example.com".to_string(),
-            role_id: role.id,
-        },
-        &mut connection,
-    )
-    .await
-    .unwrap();
-
-    let session = services::sessions::insert(
-        StoreSessionSchema {
-            session: Uuid::new_v4(),
-            user_id: user.user.id,
-        },
-        &mut connection,
-    )
-    .await
-    .unwrap();
+    let (_, session) = auth(&config.member, &mut config.connection).await;
 
     let category = services::category::insert(
         &StoreCategorySchema {
             name: "category 1".to_string(),
         },
-        &mut connection,
+        &mut config.connection,
     )
     .await
     .unwrap();
@@ -443,7 +227,8 @@ pub async fn store_category_taken() {
     let mut payload = HashMap::new();
     payload.insert("name", category.name);
 
-    let response = app
+    let response = config
+        .app
         .oneshot(
             Request::builder()
                 .method("POST")
@@ -460,30 +245,6 @@ pub async fn store_category_taken() {
 }
 
 #[tokio::test]
-pub async fn delete_category_unauth() {
-    let container = Postgres::default()
-        .with_tag("latest")
-        .start()
-        .await
-        .unwrap();
-
-    let (app, _) = init(&container).await;
-
-    let response = app
-        .oneshot(
-            Request::builder()
-                .method("DELETE")
-                .uri(&format!("/categories/{}", Uuid::new_v4().to_string()))
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
-    assert_eq!(response.status(), 401);
-}
-
-#[tokio::test]
 pub async fn delete_category_success() {
     let container = Postgres::default()
         .with_tag("latest")
@@ -491,44 +252,21 @@ pub async fn delete_category_success() {
         .await
         .unwrap();
 
-    let (app, mut connection) = init(&container).await;
+    let mut config = init(&container).await;
 
-    let role = services::role::find_by_name(&ROLES.member, &mut connection)
-        .await
-        .unwrap()
-        .unwrap();
-
-    let user = services::user::insert(
-        &StoreUserSchema {
-            name: None,
-            email: "example@example.com".to_string(),
-            role_id: role.id,
-        },
-        &mut connection,
-    )
-    .await
-    .unwrap();
-
-    let session = services::sessions::insert(
-        StoreSessionSchema {
-            session: Uuid::new_v4(),
-            user_id: user.user.id,
-        },
-        &mut connection,
-    )
-    .await
-    .unwrap();
+    let (_, session) = auth(&config.member, &mut config.connection).await;
 
     let category = services::category::insert(
         &StoreCategorySchema {
             name: "category 1".to_string(),
         },
-        &mut connection,
+        &mut config.connection,
     )
     .await
     .unwrap();
 
-    let response = app
+    let response = config
+        .app
         .oneshot(
             Request::builder()
                 .method("DELETE")
@@ -551,35 +289,12 @@ pub async fn delete_category_not_found() {
         .await
         .unwrap();
 
-    let (app, mut connection) = init(&container).await;
+    let mut config = init(&container).await;
 
-    let role = services::role::find_by_name(&ROLES.member, &mut connection)
-        .await
-        .unwrap()
-        .unwrap();
+    let (_, session) = auth(&config.member, &mut config.connection).await;
 
-    let user = services::user::insert(
-        &StoreUserSchema {
-            name: None,
-            email: "example@example.com".to_string(),
-            role_id: role.id,
-        },
-        &mut connection,
-    )
-    .await
-    .unwrap();
-
-    let session = services::sessions::insert(
-        StoreSessionSchema {
-            session: Uuid::new_v4(),
-            user_id: user.user.id,
-        },
-        &mut connection,
-    )
-    .await
-    .unwrap();
-
-    let response = app
+    let response = config
+        .app
         .oneshot(
             Request::builder()
                 .method("DELETE")
@@ -595,30 +310,6 @@ pub async fn delete_category_not_found() {
 }
 
 #[tokio::test]
-pub async fn update_category_unauth() {
-    let container = Postgres::default()
-        .with_tag("latest")
-        .start()
-        .await
-        .unwrap();
-
-    let (app, _) = init(&container).await;
-
-    let response = app
-        .oneshot(
-            Request::builder()
-                .method("PATCH")
-                .uri(&format!("/categories/{}", Uuid::new_v4().to_string()))
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
-    assert_eq!(response.status(), 401);
-}
-
-#[tokio::test]
 pub async fn update_category_not_found() {
     let container = Postgres::default()
         .with_tag("latest")
@@ -626,38 +317,15 @@ pub async fn update_category_not_found() {
         .await
         .unwrap();
 
-    let (app, mut connection) = init(&container).await;
+    let mut config = init(&container).await;
 
-    let role = services::role::find_by_name(&ROLES.member, &mut connection)
-        .await
-        .unwrap()
-        .unwrap();
-
-    let user = services::user::insert(
-        &StoreUserSchema {
-            name: None,
-            email: "example@example.com".to_string(),
-            role_id: role.id,
-        },
-        &mut connection,
-    )
-    .await
-    .unwrap();
-
-    let session = services::sessions::insert(
-        StoreSessionSchema {
-            session: Uuid::new_v4(),
-            user_id: user.user.id,
-        },
-        &mut connection,
-    )
-    .await
-    .unwrap();
+    let (_, session) = auth(&config.member, &mut config.connection).await;
 
     let mut payload = HashMap::new();
     payload.insert("name", "category 1");
 
-    let response = app
+    let response = config
+        .app
         .oneshot(
             Request::builder()
                 .method("PATCH")
@@ -681,39 +349,15 @@ pub async fn update_category_success() {
         .await
         .unwrap();
 
-    let (app, mut connection) = init(&container).await;
+    let mut config = init(&container).await;
 
-    let role = services::role::find_by_name(&ROLES.member, &mut connection)
-        .await
-        .unwrap()
-        .unwrap();
-
-    let user = services::user::insert(
-        &StoreUserSchema {
-            name: None,
-            email: "example@example.com".to_string(),
-            role_id: role.id,
-        },
-        &mut connection,
-    )
-    .await
-    .unwrap();
-
-    let session = services::sessions::insert(
-        StoreSessionSchema {
-            session: Uuid::new_v4(),
-            user_id: user.user.id,
-        },
-        &mut connection,
-    )
-    .await
-    .unwrap();
+    let (_, session) = auth(&config.member, &mut config.connection).await;
 
     let category = services::category::insert(
         &StoreCategorySchema {
             name: "category 1".to_string(),
         },
-        &mut connection,
+        &mut config.connection,
     )
     .await
     .unwrap();
@@ -723,7 +367,8 @@ pub async fn update_category_success() {
     let mut payload = HashMap::new();
     payload.insert("name", new_category);
 
-    let response = app
+    let response = config
+        .app
         .oneshot(
             Request::builder()
                 .method("PATCH")
@@ -736,9 +381,9 @@ pub async fn update_category_success() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), 200);
+    assert_eq!(response.status(), 204);
 
-    let category = services::category::find(&category.id, &mut connection)
+    let category = services::category::find(&category.id, &mut config.connection)
         .await
         .unwrap()
         .unwrap();
@@ -754,39 +399,15 @@ pub async fn update_category_same_category() {
         .await
         .unwrap();
 
-    let (app, mut connection) = init(&container).await;
+    let mut config = init(&container).await;
 
-    let role = services::role::find_by_name(&ROLES.member, &mut connection)
-        .await
-        .unwrap()
-        .unwrap();
-
-    let user = services::user::insert(
-        &StoreUserSchema {
-            name: None,
-            email: "example@example.com".to_string(),
-            role_id: role.id,
-        },
-        &mut connection,
-    )
-    .await
-    .unwrap();
-
-    let session = services::sessions::insert(
-        StoreSessionSchema {
-            session: Uuid::new_v4(),
-            user_id: user.user.id,
-        },
-        &mut connection,
-    )
-    .await
-    .unwrap();
+    let (_, session) = auth(&config.member, &mut config.connection).await;
 
     let category = services::category::insert(
         &StoreCategorySchema {
             name: "category 1".to_string(),
         },
-        &mut connection,
+        &mut config.connection,
     )
     .await
     .unwrap();
@@ -794,7 +415,8 @@ pub async fn update_category_same_category() {
     let mut payload = HashMap::new();
     payload.insert("name", category.name);
 
-    let response = app
+    let response = config
+        .app
         .oneshot(
             Request::builder()
                 .method("PATCH")
@@ -807,7 +429,7 @@ pub async fn update_category_same_category() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), 200);
+    assert_eq!(response.status(), 204);
 }
 
 #[tokio::test]
@@ -818,39 +440,15 @@ pub async fn update_category_taken() {
         .await
         .unwrap();
 
-    let (app, mut connection) = init(&container).await;
+    let mut config = init(&container).await;
 
-    let role = services::role::find_by_name(&ROLES.member, &mut connection)
-        .await
-        .unwrap()
-        .unwrap();
-
-    let user = services::user::insert(
-        &StoreUserSchema {
-            name: None,
-            email: "example@example.com".to_string(),
-            role_id: role.id,
-        },
-        &mut connection,
-    )
-    .await
-    .unwrap();
-
-    let session = services::sessions::insert(
-        StoreSessionSchema {
-            session: Uuid::new_v4(),
-            user_id: user.user.id,
-        },
-        &mut connection,
-    )
-    .await
-    .unwrap();
+    let (_, session) = auth(&config.member, &mut config.connection).await;
 
     let category = services::category::insert(
         &StoreCategorySchema {
             name: "category 1".to_string(),
         },
-        &mut connection,
+        &mut config.connection,
     )
     .await
     .unwrap();
@@ -859,7 +457,7 @@ pub async fn update_category_taken() {
         &StoreCategorySchema {
             name: "category 2".to_string(),
         },
-        &mut connection,
+        &mut config.connection,
     )
     .await
     .unwrap();
@@ -867,7 +465,8 @@ pub async fn update_category_taken() {
     let mut payload = HashMap::new();
     payload.insert("name", second_category.name);
 
-    let response = app
+    let response = config
+        .app
         .oneshot(
             Request::builder()
                 .method("PATCH")

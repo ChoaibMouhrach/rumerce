@@ -20,13 +20,14 @@ pub async fn find_by_name(name: &str, db: &mut PgConnection) -> Result<Option<Ro
         .await
 }
 
-pub async fn insert(
-    input: &StoreRoleSchema,
-    db: &mut PgConnection,
-) -> Result<PgQueryResult, sqlx::Error> {
-    sqlx::query!("INSERT INTO roles(name) VALUES ($1)", input.name)
-        .execute(&mut *db)
-        .await
+pub async fn insert(input: &StoreRoleSchema, db: &mut PgConnection) -> Result<Role, sqlx::Error> {
+    sqlx::query_as!(
+        Role,
+        "INSERT INTO roles(name) VALUES ($1) RETURNING *",
+        input.name
+    )
+    .fetch_one(&mut *db)
+    .await
 }
 
 pub async fn update(

@@ -1875,6 +1875,7 @@ dependencies = [
  "chrono",
  "cookie",
  "dotenvy",
+ "futures",
  "http-body-util",
  "log",
  "resend-rs",
