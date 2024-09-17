@@ -28,6 +28,8 @@ export const loader: LoaderFunction = async ({ request }) => {
 
   const cookies = response.headers.get("set-cookie");
 
+  console.log(cookies);
+
   return redirect("/", {
     headers: cookies ? { "set-cookie": cookies } : undefined,
   });

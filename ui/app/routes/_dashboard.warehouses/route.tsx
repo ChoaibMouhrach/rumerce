@@ -9,7 +9,6 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-import { Input } from "~/components/ui/input";
 import {
   Card,
   CardContent,
@@ -19,7 +18,8 @@ import {
 } from "~/components/ui/card";
 import { Create } from "./create";
 import { Options } from "./options";
-import { Pagination } from "./pagination";
+import { Pagination } from "~/components/pagination";
+import { Search } from "~/components/search";
 import { warehouseService } from "~/services/warehouse";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -43,11 +43,7 @@ const Page = () => {
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <div className="flex items-center">
-          <Input
-            disabled
-            placeholder="Search..."
-            className="mr-auto max-w-md"
-          />
+          <Search />
           <Create />
         </div>
         <div className="border rounded-md">

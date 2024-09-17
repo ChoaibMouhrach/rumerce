@@ -5,10 +5,10 @@ export const Pagination = () => {
     <div className="flex items-center justify-between">
       <span>Page 1 of 100</span>
       <div className="flex items-center gap-2">
-        <Button size="sm" variant="secondary">
+        <Button disabled size="sm" variant="secondary">
           Previous
         </Button>
-        <Button size="sm" variant="secondary">
+        <Button disabled size="sm" variant="secondary">
           Next
         </Button>
       </div>
