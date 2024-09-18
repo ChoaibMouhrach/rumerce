@@ -4,14 +4,7 @@ import { toast } from "sonner";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { cn } from "~/lib/utils";
-import { TCollection } from ".";
-
-export interface TVariant {
-  id: number;
-  name: string;
-  options: { id: number; name: string }[];
-}
+import { cn, generateCollections, TCollection, TVariant } from "~/lib/utils";
 
 interface OptionsProps {
   variants: TVariant[];
@@ -47,68 +40,6 @@ export const SubVariants: React.FC<OptionsProps> = ({
       },
     ]);
   };
-
-  function generateCollections(
-    variants: TVariant[],
-    existingCollections: TCollection[]
-  ): TCollection[] {
-    // Filter out variants that have an empty name or all options are empty
-    const filteredVariants = variants.filter(
-      (variant) =>
-        variant.name.trim() !== "" &&
-        variant.options.some((option) => option.name.trim() !== "")
-    );
-
-    if (filteredVariants.length === 0) {
-      return [];
-    }
-
-    const [currentVariant, ...remainingVariants] = filteredVariants;
-    const subVariants = generateCollections(
-      remainingVariants,
-      existingCollections
-    );
-
-    const validOptions = currentVariant.options.filter(
-      (option) => option.name.trim() !== ""
-    );
-
-    if (remainingVariants.length === 0) {
-      return validOptions.map((option) => {
-        const existingCollection = existingCollections.find(
-          (col) =>
-            col.options.length === 1 && col.options[0].value === option.name
-        );
-        return {
-          options: [{ key: currentVariant.name, value: option.name }],
-          price: existingCollection?.price ?? 1, // Preserve price if it exists, otherwise default to 1
-          checked: existingCollection?.checked ?? false, // Preserve checked state if it exists
-        };
-      });
-    }
-
-    return validOptions.flatMap((option) =>
-      subVariants.map((subVariant) => {
-        const newOptions = [
-          ...subVariant.options,
-          { key: currentVariant.name, value: option.name },
-        ];
-        const existingCollection = existingCollections.find(
-          (col) =>
-            col.options.length === newOptions.length &&
-            col.options.every(
-              (opt, index) => opt.value === newOptions[index].value
-            )
-        );
-        return {
-          ...subVariant,
-          options: newOptions,
-          price: existingCollection?.price ?? 1,
-          checked: existingCollection?.checked ?? false,
-        };
-      })
-    );
-  }
 
   const updateVariantName = (id: number, name: string) => {
     const newVariants = variants.map((variant) => {
