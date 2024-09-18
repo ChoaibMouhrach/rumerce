@@ -1,6 +1,7 @@
 pub mod auth;
 pub mod cart;
 pub mod category;
+pub mod image;
 pub mod product;
 pub mod role;
 pub mod unit;

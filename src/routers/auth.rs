@@ -1,5 +1,5 @@
 use crate::{
-    controllers::{auth, category, product, role, unit, user, warehouse},
+    controllers::{auth, category, image, product, role, unit, user, warehouse},
     services, AppState,
 };
 
@@ -13,6 +13,7 @@ use axum::{
 };
 use cookie::Cookie;
 use log::error;
+use tower_http::limit::RequestBodyLimitLayer;
 use uuid::Uuid;
 
 async fn auth_middleware(
@@ -133,6 +134,10 @@ pub fn init(state: AppState) -> Router<AppState> {
         .route("/sign-out", post(auth::sign_out))
         .route("/profile", get(auth::profile));
 
+    let image_router = Router::new()
+        .route("/images", post(image::upload))
+        .layer(RequestBodyLimitLayer::new(2 * 1024 * 1024));
+
     Router::new()
         .merge(role_router)
         .merge(user_router)
@@ -140,6 +145,7 @@ pub fn init(state: AppState) -> Router<AppState> {
         .merge(unit_router)
         .merge(warehouse_router)
         .merge(product_router)
+        .merge(image_router)
         .merge(auth_router)
         .route_layer(from_fn_with_state(state, auth_middleware))
 }

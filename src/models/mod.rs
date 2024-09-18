@@ -1,5 +1,6 @@
 pub mod cart;
 pub mod category;
+pub mod image;
 pub mod magic_tokens;
 pub mod product;
 pub mod role;
