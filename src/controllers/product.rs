@@ -97,6 +97,17 @@ pub async fn store(
         return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
     }
 
+    // attach variants
+    if let Err(err) = product.attach_images(&input.images, &mut tx).await {
+        error!("{err}");
+
+        if let Err(err) = tx.rollback().await {
+            error!("{err}");
+        }
+
+        return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+    }
+
     if let Err(err) = tx.commit().await {
         error!("{err}");
         return (StatusCode::INTERNAL_SERVER_ERROR).into_response();

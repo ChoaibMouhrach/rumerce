@@ -3,7 +3,7 @@ use serde::Serialize;
 use sqlx::prelude::{FromRow, Type};
 use uuid::Uuid;
 
-#[derive(FromRow, Debug, Serialize, Type)]
+#[derive(FromRow, Debug, Serialize, Type, Clone)]
 pub struct Image {
     pub id: Uuid,
     pub name: String,

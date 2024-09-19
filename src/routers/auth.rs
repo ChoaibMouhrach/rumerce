@@ -13,7 +13,7 @@ use axum::{
 };
 use cookie::Cookie;
 use log::error;
-use tower_http::limit::RequestBodyLimitLayer;
+use tower_http::{limit::RequestBodyLimitLayer, services::ServeDir};
 use uuid::Uuid;
 
 async fn auth_middleware(
@@ -138,6 +138,10 @@ pub fn init(state: AppState) -> Router<AppState> {
         .route("/images", post(image::upload))
         .layer(RequestBodyLimitLayer::new(2 * 1024 * 1024));
 
+    let public_router = Router::new()
+        //
+        .nest_service("/public", ServeDir::new("public"));
+
     Router::new()
         .merge(role_router)
         .merge(user_router)
@@ -147,5 +151,6 @@ pub fn init(state: AppState) -> Router<AppState> {
         .merge(product_router)
         .merge(image_router)
         .merge(auth_router)
+        .merge(public_router)
         .route_layer(from_fn_with_state(state, auth_middleware))
 }

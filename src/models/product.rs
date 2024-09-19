@@ -1,11 +1,11 @@
 use chrono::NaiveDateTime;
 use serde::Serialize;
-use sqlx::{prelude::FromRow, PgConnection};
+use sqlx::{postgres::PgQueryResult, prelude::FromRow, PgConnection};
 use uuid::Uuid;
 
 use crate::validations::product::Variant;
 
-use super::{category::Category, unit::Unit};
+use super::{category::Category, image::Image, unit::Unit};
 
 #[derive(Debug, Clone, FromRow, Serialize, sqlx::Type)]
 pub struct Product {
@@ -156,6 +156,20 @@ impl Product {
 
         Ok(())
     }
+
+    pub async fn attach_images(
+        &self,
+        images: &Vec<Uuid>,
+        connection: &mut PgConnection,
+    ) -> Result<PgQueryResult, sqlx::Error> {
+        sqlx::query!(
+            "INSERT INTO product_image(product_id, image_id) SELECT * FROM UNNEST($1::UUID[], $2::UUID[])",
+            &images.iter().map(|_| self.id).collect::<Vec<Uuid>>(),
+            images
+        )
+        .execute(connection)
+        .await
+    }
 }
 
 #[derive(Serialize, Debug, Clone)]
@@ -167,6 +181,7 @@ pub struct PopulatedProduct {
     pub collection: ProductVariantCollection,
     pub key: ProductVariantCollectionKey,
     pub value: ProductVariantCollectionValue,
+    pub images: Vec<Image>,
 }
 
 #[derive(Debug, Clone, FromRow, Serialize, sqlx::Type)]
@@ -217,4 +232,5 @@ pub struct SProduct {
     pub category: Category,
     pub unit: Unit,
     pub variants: Vec<SVariant>,
+    pub images: Vec<Image>,
 }

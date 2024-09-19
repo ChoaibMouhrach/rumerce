@@ -11,6 +11,7 @@ import {
 import { api } from "./auth";
 import { categorySchema } from "~/validations/category";
 import { unitSchema } from "~/validations/unit";
+import { imageSchema } from "~/validations/image";
 
 class ProductService {
   public async all(cookie?: string) {
@@ -29,6 +30,7 @@ class ProductService {
           product: productSchema,
           category: categorySchema,
           unit: unitSchema,
+          images: z.array(imageSchema).min(1),
           variants: z
             .array(
               z.object({

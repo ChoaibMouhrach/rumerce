@@ -21,6 +21,7 @@ import { productService } from "~/services/products";
 import { auth } from "~/services/auth";
 import { useLoaderData } from "@remix-run/react";
 import { Options } from "./options";
+import { env } from "~/env";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { cookies } = await auth.protected(request);
@@ -55,6 +56,7 @@ const Page = () => {
                 <TableHead>Category</TableHead>
                 <TableHead>Unit</TableHead>
                 <TableHead>Variants</TableHead>
+                <TableHead>Images</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -62,7 +64,16 @@ const Page = () => {
                 <Options product={product} key={product.product.id}>
                   <TableRow>
                     <TableCell>
-                      <div className="border rounded-md w-32 aspect-square bg-muted" />
+                      <div className="relative border rounded-md bg-muted w-32 aspect-square">
+                        <img
+                          src={new URL(
+                            `/public/${product.images[0].src}`,
+                            env.VITE_API_URL
+                          ).toString()}
+                          alt={product.images[0].name}
+                          className="absolute top-0 left-0 w-full h-full object-contain"
+                        />
+                      </div>
                     </TableCell>
                     <TableCell className="font-medium">
                       {product.product.name}
@@ -70,6 +81,7 @@ const Page = () => {
                     <TableCell>{product.category.name}</TableCell>
                     <TableCell>{product.unit.name}</TableCell>
                     <TableCell>{product.variants.length}</TableCell>
+                    <TableCell>{product.images.length}</TableCell>
                   </TableRow>
                 </Options>
               ))}

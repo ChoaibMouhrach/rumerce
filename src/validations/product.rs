@@ -27,4 +27,6 @@ pub struct StoreProductSchema {
     pub category_id: Uuid,
     #[validate(length(min = 1))]
     pub variants: Vec<Variant>,
+    #[validate(length(min = 1))]
+    pub images: Vec<Uuid>,
 }

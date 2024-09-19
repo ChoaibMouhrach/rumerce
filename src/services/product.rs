@@ -6,6 +6,7 @@ use uuid::Uuid;
 use crate::{
     models::{
         category::Category,
+        image::Image,
         product::{
             PopulatedProduct, Product, ProductVariant, ProductVariantCollection,
             ProductVariantCollectionKey, ProductVariantCollectionValue, SCollection, SProduct,
@@ -20,21 +21,32 @@ pub async fn all(db: &mut PgConnection) -> Result<Vec<SProduct>, sqlx::Error> {
     let raw_products = sqlx::query_as!(
         PopulatedProduct,
         r#"
-          SELECT 
-            (products.id, products.name, products.description, products.category_id, products.unit_id, products.created_at) AS "product!: Product",
-            (units.id, units.name, units.created_at) AS "unit!: Unit",
-            (categories.id, categories.name, categories.created_at) AS "category!: Category",
-            (product_variants.id, product_variants.price, product_variants.product_id) AS "variant!: ProductVariant",
-            (product_variant_collections.id, product_variant_collections.variant_id, product_variant_collections.key_id, product_variant_collections.value_id) AS "collection!: ProductVariantCollection",
-            (product_variant_collection_keys.id, product_variant_collection_keys.name, product_variant_collection_keys.product_id, product_variant_collections.value_id) AS "key!: ProductVariantCollectionKey",
-            (product_variant_collection_values.id, product_variant_collection_values.name, product_variant_collection_values.key_id) AS "value!: ProductVariantCollectionValue"
-          FROM products
-          JOIN units ON products.unit_id = units.id
-          JOIN categories ON products.category_id = categories.id
-          JOIN product_variants ON products.id = product_variants.product_id
-          JOIN product_variant_collections ON product_variants.id = product_variant_collections.variant_id
-          JOIN product_variant_collection_keys ON product_variant_collections.key_id = product_variant_collection_keys.id
-          JOIN product_variant_collection_values ON product_variant_collections.value_id = product_variant_collection_values.id
+            SELECT 
+                (products.id, products.name, products.description, products.category_id, products.unit_id, products.created_at) AS "product!: Product",
+                (units.id, units.name, units.created_at) AS "unit!: Unit",
+                (categories.id, categories.name, categories.created_at) AS "category!: Category",
+                (product_variants.id, product_variants.price, product_variants.product_id) AS "variant!: ProductVariant",
+                (product_variant_collections.id, product_variant_collections.variant_id, product_variant_collections.key_id, product_variant_collections.value_id) AS "collection!: ProductVariantCollection",
+                (product_variant_collection_keys.id, product_variant_collection_keys.name, product_variant_collection_keys.product_id, product_variant_collections.value_id) AS "key!: ProductVariantCollectionKey",
+                (product_variant_collection_values.id, product_variant_collection_values.name, product_variant_collection_values.key_id) AS "value!: ProductVariantCollectionValue",
+                array_agg((images.id, images.name, images.src, images.created_at)) as "images!: Vec<Image>"
+            FROM products
+            JOIN product_image ON product_image.product_id = products.id
+            JOIN images ON images.id = product_image.image_id
+            JOIN units ON products.unit_id = units.id
+            JOIN categories ON products.category_id = categories.id
+            JOIN product_variants ON products.id = product_variants.product_id
+            JOIN product_variant_collections ON product_variants.id = product_variant_collections.variant_id
+            JOIN product_variant_collection_keys ON product_variant_collections.key_id = product_variant_collection_keys.id
+            JOIN product_variant_collection_values ON product_variant_collections.value_id = product_variant_collection_values.id
+            GROUP BY 
+                products.id,
+                units.id,
+                categories.id,
+                product_variants.id,
+                product_variant_collections.id,
+                product_variant_collection_keys.id,
+                product_variant_collection_values.id
         "#
     ).fetch_all(&mut *db).await?;
 
@@ -84,6 +96,7 @@ pub async fn all(db: &mut PgConnection) -> Result<Vec<SProduct>, sqlx::Error> {
                 product: product.product.clone(),
                 category: product.category.clone(),
                 unit: product.unit.clone(),
+                images: product.images.clone(),
                 variants,
             }
         })
@@ -103,8 +116,11 @@ pub async fn find(id: &Uuid, db: &mut PgConnection) -> Result<Option<SProduct>, 
             (product_variants.id, product_variants.price, product_variants.product_id) AS "variant!: ProductVariant",
             (product_variant_collections.id, product_variant_collections.variant_id, product_variant_collections.key_id, product_variant_collections.value_id) AS "collection!: ProductVariantCollection",
             (product_variant_collection_keys.id, product_variant_collection_keys.name, product_variant_collection_keys.product_id, product_variant_collections.value_id) AS "key!: ProductVariantCollectionKey",
-            (product_variant_collection_values.id, product_variant_collection_values.name, product_variant_collection_values.key_id) AS "value!: ProductVariantCollectionValue"
+            (product_variant_collection_values.id, product_variant_collection_values.name, product_variant_collection_values.key_id) AS "value!: ProductVariantCollectionValue",
+            array_agg((images.id, images.name, images.src, images.created_at)) as "images!: Vec<Image>"
           FROM products
+          JOIN product_image ON product_image.product_id = products.id
+          JOIN images ON images.id = product_image.image_id
           JOIN units ON products.unit_id = units.id
           JOIN categories ON products.category_id = categories.id
           JOIN product_variants ON products.id = product_variants.product_id
@@ -112,6 +128,14 @@ pub async fn find(id: &Uuid, db: &mut PgConnection) -> Result<Option<SProduct>, 
           JOIN product_variant_collection_keys ON product_variant_collections.key_id = product_variant_collection_keys.id
           JOIN product_variant_collection_values ON product_variant_collections.value_id = product_variant_collection_values.id
           WHERE products.id = $1
+          GROUP BY 
+            products.id,
+            units.id,
+            categories.id,
+            product_variants.id,
+            product_variant_collections.id,
+            product_variant_collection_keys.id,
+            product_variant_collection_values.id
         "#,
         id
     ).fetch_all(&mut *db).await?;
@@ -162,6 +186,7 @@ pub async fn find(id: &Uuid, db: &mut PgConnection) -> Result<Option<SProduct>, 
                 product: product.product.clone(),
                 category: product.category.clone(),
                 unit: product.unit.clone(),
+                images: product.images.clone(),
                 variants,
             }
         })
