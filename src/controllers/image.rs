@@ -31,7 +31,7 @@ pub async fn upload(State(state): State<AppState>, mut multipart: Multipart) -> 
         }
     };
 
-    if content_type != "image/jpeg" || content_type != "image/png" {
+    if content_type != "image/jpeg" && content_type != "image/png" {
         return (
             StatusCode::BAD_REQUEST,
             Json("Only image file type is allowed"),
@@ -71,10 +71,13 @@ pub async fn upload(State(state): State<AppState>, mut multipart: Multipart) -> 
     )
     .await;
 
-    if let Err(err) = image {
-        error!("{err}");
-        return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
-    }
+    let image = match image {
+        Ok(image) => image,
+        Err(err) => {
+            error!("{err}");
+            return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+        } 
+    };
 
-    (StatusCode::CREATED).into_response()
+    (StatusCode::CREATED, Json(image)).into_response()
 }

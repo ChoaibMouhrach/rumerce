@@ -24,10 +24,12 @@ import {
 import { UnitsInput } from "~/components/units-input";
 import { StoreProductPayload, storeProductSchema } from "~/validations/product";
 import { Variants } from "./variants";
-import { useMutation } from "@tanstack/react-query";
 import { productService } from "~/services/products";
 import { toast } from "sonner";
 import { useRevalidator } from "@remix-run/react";
+import { DropZone } from "~/components/drop-zone";
+import { useState } from "react";
+import { imageService } from "~/services/images";
 
 type Payload = StoreProductPayload;
 
@@ -40,27 +42,35 @@ export const Create = () => {
       description: "",
       unit_id: "",
       category_id: "",
+      images: [],
       variants: [],
     },
   });
 
-  const { mutate, isPending } = useMutation({
-    mutationFn: productService.store,
-    onSuccess: () => {
-      toast.success("Product created successfully");
-      form.reset();
-      revalidator.revalidate();
-    },
-    onError: () => {
-      toast.error("Something went wrong");
-    },
-  });
+  const [isPending, setIsPending] = useState(false);
 
-  const onSubmit = (payload: Payload) => {
-    mutate({
-      ...payload,
-      variants: payload.variants.filter((variant) => variant.checked),
-    });
+  const onSubmit = async (payload: Payload) => {
+    setIsPending(true);
+
+    try {
+      const images = await Promise.all(
+        payload.images.map((file) => imageService.upload(file))
+      );
+
+      await productService.store({
+        ...payload,
+        images: images.map(({ id }) => id),
+        variants: payload.variants.filter((variant) => variant.checked),
+      });
+
+      revalidator.revalidate();
+      toast.success("Product added successfulyy");
+    } catch (err) {
+      console.error(err);
+      toast.error("Something went wrong");
+    }
+
+    setIsPending(false);
   };
 
   return (
@@ -146,6 +156,23 @@ export const Create = () => {
                   <FormDescription>
                     The description of the product.
                   </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              name="images"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Images</FormLabel>
+                  <FormControl>
+                    <DropZone
+                      onValueChange={field.onChange}
+                      value={field.value}
+                    />
+                  </FormControl>
+                  <FormDescription>The images of the product.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

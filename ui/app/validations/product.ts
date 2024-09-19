@@ -38,6 +38,7 @@ export const storeProductSchema = z.object({
   description: z.union([z.null(), z.string().min(1)]),
   unit_id: z.string().uuid(),
   category_id: z.string().uuid(),
+  images: z.array(z.instanceof(File)).min(1),
   variants: z
     .array(
       z.object({

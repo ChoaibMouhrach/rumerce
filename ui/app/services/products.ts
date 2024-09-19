@@ -62,7 +62,10 @@ class ProductService {
     return productSchema.parse(data);
   }
 
-  public store(payload: StoreProductPayload, cookie?: string) {
+  public store(
+    payload: Omit<StoreProductPayload, "images"> & { images: string[] },
+    cookie?: string
+  ) {
     const url = new URL(env.VITE_API_URL);
     url.pathname = "/products";
 
