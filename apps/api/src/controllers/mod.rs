@@ -4,6 +4,7 @@ pub mod category;
 pub mod image;
 pub mod product;
 pub mod role;
+pub mod settings;
 pub mod unit;
 pub mod user;
 pub mod warehouse;

@@ -6,7 +6,7 @@ use axum::{
 use tower_http::services::ServeDir;
 
 use crate::{
-    controllers::{auth, cart, category, product, unit},
+    controllers::{auth, cart, category, product, settings, unit},
     middlewares::optional_auth,
     AppState,
 };
@@ -34,6 +34,10 @@ pub fn init(state: AppState) -> Router<AppState> {
         .route("/sign-in", post(auth::sign_in))
         .route("/auth", get(auth::auth));
 
+    let setup_router = Router::new()
+        .route("/setup", post(settings::setup))
+        .route("/setup", get(settings::setup_check));
+
     let public_router = Router::new().nest_service("/public", ServeDir::new("public"));
 
     Router::new()
@@ -43,5 +47,6 @@ pub fn init(state: AppState) -> Router<AppState> {
         .merge(public_router)
         .merge(cart_router)
         .merge(auth_router)
+        .merge(setup_router)
         .route_layer(from_fn_with_state(state, optional_auth::middleware))
 }

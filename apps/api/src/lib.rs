@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use axum::{
     http::{header::CONTENT_TYPE, HeaderValue, Method},
+    middleware::from_fn_with_state,
     Router,
 };
 use routers::{admin, auth, public};
@@ -44,4 +45,5 @@ pub fn create_app(state: State) -> Router {
                 .allow_headers([CONTENT_TYPE])
                 .allow_credentials(true),
         )
+        .route_layer(from_fn_with_state(state, middlewares::setup::middleware))
 }

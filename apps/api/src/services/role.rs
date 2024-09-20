@@ -20,7 +20,10 @@ pub async fn find_by_name(name: &str, db: &mut PgConnection) -> Result<Option<Ro
         .await
 }
 
-pub async fn insert(input: &StoreRoleSchema, db: &mut PgConnection) -> Result<Role, sqlx::Error> {
+pub async fn insert<'a>(
+    input: &StoreRoleSchema<'a>,
+    db: &mut PgConnection,
+) -> Result<Role, sqlx::Error> {
     sqlx::query_as!(
         Role,
         "INSERT INTO roles(name) VALUES ($1) RETURNING *",
@@ -30,9 +33,25 @@ pub async fn insert(input: &StoreRoleSchema, db: &mut PgConnection) -> Result<Ro
     .await
 }
 
-pub async fn update(
+pub async fn insert_many<'a>(
+    inputs: &Vec<StoreRoleSchema<'a>>,
+    db: &mut PgConnection,
+) -> Result<Vec<Role>, sqlx::Error> {
+    sqlx::query_as!(
+        Role,
+        "INSERT INTO roles(name) SELECT * FROM UNNEST($1::TEXT[]) RETURNING *",
+        &inputs
+            .iter()
+            .map(|input| input.name.to_string())
+            .collect::<Vec<_>>()
+    )
+    .fetch_all(&mut *db)
+    .await
+}
+
+pub async fn update<'a>(
     id: &Uuid,
-    input: &StoreRoleSchema,
+    input: &StoreRoleSchema<'a>,
     db: &mut PgConnection,
 ) -> Result<PgQueryResult, sqlx::Error> {
     sqlx::query!("UPDATE roles SET name = $1 WHERE id = $2", input.name, id)

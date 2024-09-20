@@ -47,23 +47,13 @@ pub async fn init(container: &ContainerAsync<Postgres>) -> Config {
 
     let mut connection = state.db.acquire().await.unwrap();
 
-    let member = services::role::insert(
-        &StoreRoleSchema {
-            name: ROLES.member.to_string(),
-        },
-        &mut connection,
-    )
-    .await
-    .unwrap();
+    let member = services::role::insert(&StoreRoleSchema { name: ROLES.member }, &mut connection)
+        .await
+        .unwrap();
 
-    let admin = services::role::insert(
-        &StoreRoleSchema {
-            name: ROLES.admin.to_string(),
-        },
-        &mut connection,
-    )
-    .await
-    .unwrap();
+    let admin = services::role::insert(&StoreRoleSchema { name: ROLES.admin }, &mut connection)
+        .await
+        .unwrap();
 
     let app = create_app(state.clone());
 
