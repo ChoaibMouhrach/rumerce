@@ -8,7 +8,10 @@ use log::error;
 use sqlx::Acquire;
 use uuid::Uuid;
 
-use crate::{services, validations::product::StoreProductSchema, AppState};
+use crate::{
+    services, utils::constants::PUBLIC_FOLDER_NAME, validations::product::StoreProductSchema,
+    AppState,
+};
 
 pub async fn index(State(state): State<AppState>) -> impl IntoResponse {
     let mut connection = match state.db.acquire().await {
@@ -140,6 +143,7 @@ pub async fn update(
         }
     };
 
+    // start transaction
     let mut tx = match connection.begin().await {
         Ok(tx) => tx,
         Err(err) => {
@@ -170,6 +174,67 @@ pub async fn update(
     if let Err(err) = product
         .product
         .attach_variants(&input.variants, &mut tx)
+        .await
+    {
+        error!("{err}");
+        if let Err(err) = tx.rollback().await {
+            error!("{err}");
+        }
+        return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+    }
+
+    // delete images
+    let tobe_deleted = product
+        .images
+        .iter()
+        .filter(|image| !input.images.contains(&image.id))
+        .collect::<Vec<_>>();
+
+    let tobe_deleted_tasks = tobe_deleted
+        .iter()
+        .map(|image| {
+            let path = std::path::Path::new(PUBLIC_FOLDER_NAME).join(&image.src);
+            tokio::fs::remove_file(path)
+        })
+        .collect::<Vec<_>>();
+
+    futures::future::join_all(tobe_deleted_tasks).await;
+
+    // delete images from db
+    if let Err(err) = services::image::destroy_many(
+        &tobe_deleted
+            .iter()
+            .map(|image| image.id)
+            .collect::<Vec<_>>(),
+        &mut tx,
+    )
+    .await
+    {
+        error!("{err}");
+        if let Err(err) = tx.rollback().await {
+            error!("{err}");
+        }
+        return (StatusCode::INTERNAL_SERVER_ERROR).into_response();
+    }
+
+    // attach new images
+    if let Err(err) = product
+        .product
+        .attach_images(
+            &input
+                .images
+                .into_iter()
+                .filter(|image| {
+                    !product
+                        .images
+                        .iter()
+                        .map(|image| image.id)
+                        .collect::<Vec<_>>()
+                        .contains(image)
+                })
+                .collect::<Vec<_>>(),
+            &mut tx,
+        )
         .await
     {
         error!("{err}");

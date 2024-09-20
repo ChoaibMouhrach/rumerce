@@ -3,14 +3,17 @@ import * as dropzone from "react-dropzone";
 import { AspectRatio } from "./ui/aspect-ratio";
 import { X } from "lucide-react";
 import { Button } from "./ui/button";
+import { env } from "~/env";
+
+type F = File | string;
 
 interface DropZoneProps {
-  onValueChange: (files: File[]) => void;
-  value: File[];
+  onValueChange: (files: F[]) => void;
+  value: F[];
 }
 
 export const DropZone: React.FC<DropZoneProps> = ({ onValueChange, value }) => {
-  const [acceptedFiles, setAcceptedFiles] = useState<File[]>([]);
+  const [acceptedFiles, setAcceptedFiles] = useState<F[]>([]);
 
   const { getRootProps, getInputProps, isDragActive } = dropzone.useDropzone({
     onDrop: (newAcceptedFiles) => {
@@ -25,11 +28,12 @@ export const DropZone: React.FC<DropZoneProps> = ({ onValueChange, value }) => {
   });
 
   const onDelete = (targetIndex: number) => {
-    setAcceptedFiles(
-      acceptedFiles.filter((_, index) => {
-        return index !== targetIndex;
-      })
-    );
+    const newFiles = acceptedFiles.filter((_, index) => {
+      return index !== targetIndex;
+    });
+
+    setAcceptedFiles(newFiles);
+    onValueChange(newFiles);
   };
 
   useEffect(() => setAcceptedFiles(value), [value]);
@@ -57,8 +61,12 @@ export const DropZone: React.FC<DropZoneProps> = ({ onValueChange, value }) => {
             ratio={1}
           >
             <img
-              src={URL.createObjectURL(file)}
-              alt={file.name}
+              src={
+                typeof file === "string"
+                  ? new URL(`/public/${file}`, env.VITE_API_URL).toString()
+                  : URL.createObjectURL(file)
+              }
+              alt={typeof file === "string" ? file : file.name}
               className="absolute top-0 left-0 w-full h-full object-contain"
             />
 

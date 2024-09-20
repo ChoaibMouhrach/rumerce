@@ -78,7 +78,11 @@ class ProductService {
     });
   }
 
-  public update(id: string, payload: StoreProductPayload, cookie?: string) {
+  public update(
+    id: string,
+    payload: Omit<StoreProductPayload, "images"> & { images: string[] },
+    cookie?: string
+  ) {
     const url = new URL(env.VITE_API_URL);
     url.pathname = `/products/${id}`;
 

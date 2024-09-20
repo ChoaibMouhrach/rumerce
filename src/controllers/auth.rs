@@ -203,7 +203,7 @@ pub async fn auth(
         [(
             header::SET_COOKIE,
             format!(
-                "{}={}; Path=/; HttpOnly; Secure; SameSite=Strict",
+                "{}={}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=2592000",
                 SESSION_COOKIE_NAME, session.session
             ),
         )],

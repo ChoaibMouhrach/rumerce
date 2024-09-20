@@ -92,6 +92,15 @@ pub async fn destroy(id: &Uuid, connection: &mut PgConnection) -> Result<PgQuery
         .await
 }
 
+pub async fn destroy_many(
+    ids: &Vec<Uuid>,
+    connection: &mut PgConnection,
+) -> Result<PgQueryResult, Error> {
+    sqlx::query!("DELETE FROM images WHERE id = ANY($1)", ids)
+        .execute(connection)
+        .await
+}
+
 pub async fn unload(image: &Image, connection: &mut PgConnection) -> Result<PgQueryResult, Error> {
     let public_path = Path::new("public");
 

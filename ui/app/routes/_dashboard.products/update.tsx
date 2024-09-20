@@ -14,15 +14,23 @@ import {
 import { Textarea } from "~/components/ui/textarea";
 import { Input } from "~/components/ui/input";
 import { UnitsInput } from "~/components/units-input";
-import { StoreProductPayload, storeProductSchema } from "~/validations/product";
+import { storeProductSchema } from "~/validations/product";
 import { Variants } from "./variants";
-import { useMutation } from "@tanstack/react-query";
 import { productService } from "~/services/products";
 import { toast } from "sonner";
-import React from "react";
+import React, { useState } from "react";
 import { useRevalidator } from "@remix-run/react";
+import { DropZone } from "~/components/drop-zone";
+import { z } from "zod";
+import { imageService } from "~/services/images";
 
-type Payload = StoreProductPayload;
+const schema = storeProductSchema.extend({
+  images: z
+    .array(z.union([z.instanceof(File), z.string().includes(".")]))
+    .min(1),
+});
+
+type Payload = z.infer<typeof schema>;
 
 interface UpdateProps {
   product: Awaited<ReturnType<typeof productService.all>>[number];
@@ -31,12 +39,13 @@ interface UpdateProps {
 export const Update: React.FC<UpdateProps> = ({ product }) => {
   const revalidator = useRevalidator();
   const form = useForm<Payload>({
-    resolver: zodResolver(storeProductSchema),
+    resolver: zodResolver(schema),
     values: {
       name: product.product.name,
       description: product.product.description,
       unit_id: product.unit.id,
       category_id: product.category.id,
+      images: product.images.map((image) => image.src),
       variants: product.variants.map((variant) => ({
         ...variant.variant,
         checked: true,
@@ -48,25 +57,42 @@ export const Update: React.FC<UpdateProps> = ({ product }) => {
     },
   });
 
-  const { mutate, isPending } = useMutation({
-    mutationFn: (payload: Payload) => {
-      return productService.update(product.product.id, payload);
-    },
-    onSuccess: () => {
+  const [isPending, setIsPending] = useState(false);
+
+  const onSubmit = async (payload: Payload) => {
+    setIsPending(true);
+
+    try {
+      const files = payload.images.filter((image) => typeof image !== "string");
+
+      const images = await Promise.all(
+        files.map((file) => imageService.upload(file))
+      );
+
+      await productService.update(product.product.id, {
+        ...payload,
+        images: [
+          ...payload.images
+            .filter((image) => typeof image === "string")
+            .map(
+              (image) =>
+                product.images.find(
+                  (productImage) => productImage.src === image
+                )!.id
+            ),
+          ...images.map((image) => image.id),
+        ],
+        variants: payload.variants.filter(({ checked }) => checked),
+      });
+
       toast.success("Product updated successfully");
       form.reset();
       revalidator.revalidate();
-    },
-    onError: () => {
+    } catch {
       toast.error("Something went wrong");
-    },
-  });
+    }
 
-  const onSubmit = (payload: Payload) => {
-    mutate({
-      ...payload,
-      variants: payload.variants.filter(({ checked }) => checked),
-    });
+    setIsPending(false);
   };
 
   return (
@@ -136,6 +162,20 @@ export const Update: React.FC<UpdateProps> = ({ product }) => {
                 />
               </FormControl>
               <FormDescription>The description of the product.</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          name="images"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Images</FormLabel>
+              <FormControl>
+                <DropZone onValueChange={field.onChange} value={field.value} />
+              </FormControl>
+              <FormDescription>The images of the product.</FormDescription>
               <FormMessage />
             </FormItem>
           )}
