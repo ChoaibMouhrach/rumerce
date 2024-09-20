@@ -2,7 +2,7 @@
   "name": "@rumerce/api",
   "scripts": {
     "build": "SQLX_OFFLINE=true cargo build --release",
-    "dev": "cargo run",
+    "dev": "cargo watch -x run",
     "start": "./target/releases/rumerce",
     "db:migrate": "cargo sqlx migrate run",
     "db:prepare": "cargo sqlx prepare"

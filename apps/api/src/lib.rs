@@ -4,11 +4,12 @@ use axum::{
     http::{header::CONTENT_TYPE, HeaderValue, Method},
     Router,
 };
-use routers::{auth, guest};
+use routers::{admin, auth, public};
 use tower_http::cors::CorsLayer;
 use utils::{db::DB, env::Env, mailer::Mail};
 
 pub mod controllers;
+pub mod middlewares;
 pub mod models;
 pub mod routers;
 pub mod services;
@@ -27,11 +28,14 @@ pub type AppState = Arc<State>;
 pub fn create_app(state: State) -> Router {
     let state = Arc::new(state);
 
-    let guest_router = guest::init(state.clone());
     let auth_router = auth::init(state.clone());
+    let admin_router = admin::init(state.clone());
+    let public_router = public::init(state.clone());
+
     Router::new()
-        .merge(guest_router)
         .merge(auth_router)
+        .merge(admin_router)
+        .merge(public_router)
         .with_state(state.clone())
         .layer(
             CorsLayer::new()
