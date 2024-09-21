@@ -1,5 +1,11 @@
 import { LoaderFunctionArgs } from "@remix-run/node";
-import { Link, Outlet, useLoaderData, useLocation } from "@remix-run/react";
+import {
+  Link,
+  Outlet,
+  redirect,
+  useLoaderData,
+  useLocation,
+} from "@remix-run/react";
 import {
   CircleUser,
   Home,
@@ -110,8 +116,15 @@ const Bar = () => {
   );
 };
 
-export const loader = ({ request }: LoaderFunctionArgs) => {
-  return auth.protected(request);
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const { profile, cookies } = await auth.protected(request);
+  const url = new URL(request.url);
+
+  if (profile.role.name !== "admin" && url.pathname !== "/403") {
+    throw redirect("/403");
+  }
+
+  return { profile, cookies };
 };
 
 const Layout = () => {

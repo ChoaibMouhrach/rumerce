@@ -3,10 +3,10 @@ use uuid::Uuid;
 use validator::Validate;
 
 #[derive(Deserialize, Validate)]
-pub struct StoreUserSchema {
+pub struct StoreUserSchema<'a> {
     #[validate(length(min = 1))]
-    pub name: Option<String>,
+    pub name: Option<&'a str>,
     #[validate(email)]
-    pub email: String,
+    pub email: &'a str,
     pub role_id: Uuid,
 }

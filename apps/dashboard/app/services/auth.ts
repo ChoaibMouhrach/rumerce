@@ -1,7 +1,7 @@
-import { redirect } from "@remix-run/react";
-import { z } from "zod";
-import { env } from "@/env";
 import { roleSchema, userSchema } from "@/validations/auth";
+import { redirect } from "@remix-run/react";
+import { env } from "@/env";
+import { z } from "zod";
 
 export const api = (
   input: string | URL | globalThis.Request,
